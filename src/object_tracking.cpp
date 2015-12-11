@@ -560,10 +560,20 @@ int main(int argc, char **argv)
      *********************   INITIALIZE PWP3D POSE  *********************
      ********************************************************************/
 
-    VFLOAT *rot;
-    rot =(VFLOAT [9]) {M(0,0),M(0,1),M(0,2),M(1,0),M(1,1),M(1,2),M(2,0),M(2,1),M(2,2)};
-    objects[objectIdx]->initialPose[viewIdx]->SetFrom(
-            M(0,3), M(1,3), M(2,3), rot);
+    VFLOAT rot[9];  
+
+    rot[0] = M(0,0);
+    rot[1] = M(0,1);
+    rot[2] = M(0,2);
+    rot[3] = M(1,0);
+    rot[4] = M(1,1);
+    rot[5] = M(1,2);
+    rot[6] = M(2,0);
+    rot[7] = M(2,1);
+    rot[8] = M(2,2);
+
+
+    objects[objectIdx]->initialPose[viewIdx]->SetFrom( M(0,3), M(1,3), M(2,3), rot);
 
     OptimisationEngine::Instance()->Initialise(width_scaled, height_scaled);
     OptimisationEngine::Instance()->RegisterViewImage(views[viewIdx], camera);
@@ -659,11 +669,11 @@ int main(int argc, char **argv)
 
         Eigen::Matrix4d prev_M = M;
 
-        int i= 0;
+        int j= 0;
         bool loop = false;
         timer.restart();
 
-        while (i<50)
+        while (j<50)
         {
             OptimisationEngine::Instance()->Minimise(objects, views, iterConfig);
 
@@ -713,7 +723,7 @@ int main(int argc, char **argv)
 
             prev_M = M;
 
-            i = i+1;
+            j++;
         }
         std::cout << timer.elapsed() << std::endl;
 

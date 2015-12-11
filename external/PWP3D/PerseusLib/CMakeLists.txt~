@@ -133,7 +133,7 @@ if(EIGEN3_FOUND)
 endif()
 
 
-find_package( FreeImage REQUIRED )
+find_package( FREEIMAGE REQUIRED )
 if(FREEIMAGE_FOUND)
     set(HAVE_FREEIMAGE 1)
     list(APPEND USER_INC ${FREEIMAGE_INCLUDE_DIRS} )

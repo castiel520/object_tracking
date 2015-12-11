@@ -15,7 +15,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
 
-option(USE_GLUT "Use GLUT instead of OSMesa" OFF)
+option(USE_GLUT "Use GLUT instead of OSMesa" ON)
 
 if (${USE_GLUT})
 find_package(GLUT)
