@@ -73,6 +73,8 @@ void projectionToOpenGL( double p[16], const cv::Mat &K, int w, int h, float zNe
 void detectionToOpenGL(const Eigen::Matrix4f &M, double m[16], const cv::Mat &K, int imageWidth, int imageHeight,
       float near, float far);
 
+void hsSegment(cv::Mat img_color, float th, int th_h, int th_s, float w_h, float w_s, cv::Mat & mask_below, cv::Mat & mask_above);
+void hsSegment(cv::Mat img_color, float th, cv::Mat img_bg, float w_h, float w_s, cv::Mat & mask_below, cv::Mat & mask_above);
 
 
 #endif

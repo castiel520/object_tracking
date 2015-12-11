@@ -90,34 +90,52 @@ std::vector<cv::Point3d> boxModel()
     return points;
 }
 
-std::vector<cv::Point2d>  getPointsForPnP(cv::Mat img)
+std::vector<cv::Point3d> cylinderModel()
+{
+    std::vector<cv::Point3d> points;
+    cv::Point3d p;
+    p = cv::Point3f(0.041575,0.017221,0.0075);
+    points.push_back(p);
+    p = cv::Point3f(-0.041575,-0.017221,0.0075);
+    points.push_back(p);
+    p = cv::Point3f(0.017221,-0.041575,0.0075);
+    points.push_back(p);
+    p = cv::Point3f(-0.017221,0.041575,0.0075);
+
+    points.push_back(p);
+
+    return points;
+}
+
+std::vector<cv::Point2d>  getPointsForPnP(cv::Mat img, int scale)
 {
     std::vector<cv::Point2d> points2D;
 
-//    // 1. Image cropper
-//    cv::Mat img_to_click;
-//    img_to_click = img;
-////    cv::Mat img_edges;
-////    img_edges = canny(img_color_scaled,th1,th2);
-////    img_to_click = img_edges;
-//    std::string  src_window = "CROP";
-//    ImageCropper imc(src_window,6);
-//    cv::setMouseCallback(src_window.c_str(),&ImageCropper::mouseCallbackPoints,&imc);
-//    imc.setImage(img_to_click);
-//    imshow(src_window.c_str(),img_to_click);
-//    cv::moveWindow(src_window.c_str(),0,0);
-//    imc.getPoints(&points2D);
-//    while (points2D.size() < 6)
-//    {
-//        imc.getPoints(&points2D);
-//        cv::waitKey(2);
-//    }
+    // 1. Image cropper
+    cv::Mat img_to_click;
+    img_to_click = img;
+//    cv::Mat img_edges;
+//    img_edges = canny(img_color_scaled,th1,th2);
+//    img_to_click = img_edges;
+    std::string  src_window = "CROP";
+    ImageCropper imc(src_window,6);
+    cv::setMouseCallback(src_window.c_str(),&ImageCropper::mouseCallbackPoints,&imc);
+    imc.setImage(img_to_click);
+    imshow(src_window.c_str(),img_to_click);
+    cv::moveWindow(src_window.c_str(),0,0);
+    imc.getPoints(&points2D);
+    while (points2D.size() < 4)
+    {
+        imc.getPoints(&points2D);
+        cv::waitKey(2);
+    }
 
 //    imc.getPoints(&points2D);
 //    cv::destroyWindow(src_window.c_str());
 
 //    // 2. Hardcode the points
 //    // Start 1980
+//    scale = 2;
 //    points2D.push_back(cv::Point2d(534,436));
 //    points2D.push_back(cv::Point2d(607,428));
 //    points2D.push_back(cv::Point2d(600,527));
@@ -125,22 +143,24 @@ std::vector<cv::Point2d>  getPointsForPnP(cv::Mat img)
 //    points2D.push_back(cv::Point2d(505,300));
 //    points2D.push_back(cv::Point2d(562,294));
 //    // Start 4675
+//    scale = 2;
 //    points2D.push_back(cv::Point2d(821,413));
 //    points2D.push_back(cv::Point2d(881,399));
 //    points2D.push_back(cv::Point2d(856,492));
 //    points2D.push_back(cv::Point2d(793,503));
 //    points2D.push_back(cv::Point2d(702,291));
 //    points2D.push_back(cv::Point2d(749,284));
-    // Start 18010
-    points2D.push_back(cv::Point2d(438,400));
-    points2D.push_back(cv::Point2d(444,362));
-    points2D.push_back(cv::Point2d(452,452));
-    points2D.push_back(cv::Point2d(447,496));
-    points2D.push_back(cv::Point2d(199,398));
-    points2D.push_back(cv::Point2d(228,357));
+//    // Start 18010
+//    scale = 2;
+//    points2D.push_back(cv::Point2d(438,400));
+//    points2D.push_back(cv::Point2d(444,362));
+//    points2D.push_back(cv::Point2d(452,452));
+//    points2D.push_back(cv::Point2d(447,496));
+//    points2D.push_back(cv::Point2d(199,398));
+//    points2D.push_back(cv::Point2d(228,357));
 
-    for (int i = 0; i < 6; i++)
-        points2D[i] *= 2;//scaling_factor;
+    for (int i = 0; i < 4; i++)
+        points2D[i] *= scale;//scaling_factor;
 
     return points2D;
 
@@ -157,7 +177,8 @@ Eigen::Matrix4d getPoseFromPnP(ORK_Renderer::Renderer3d &renderer, int width, in
 
     std::vector<cv::Point3d> points3D;
     cv::Mat_<double> rvec, tvec,rotM;
-    points3D = boxModel();
+//    points3D = boxModel();
+    points3D = cylinderModel();
     cv::solvePnP(points3D,points2D,K_color,cv::Mat() ,rvec,tvec,false, CV_ITERATIVE); // CV_EPNP CV_ITERATIVE
 
     Rodrigues(rvec,rotM);
@@ -274,23 +295,28 @@ int readStereoCalib(std::string calibFile, cv::Mat &K_depth, cv::Mat &dist_depth
 int main(int argc, char **argv)
 {
     boost::timer timer;
-    double duration;
-
 //    Viewer pcl_viewer;
 
-    // LOAD STUFF
+    /**********************************************************
+     *********************   LOAD STUFF   *********************
+     **********************************************************/
+
     // Help
-//    bool help = false;
     if (pcl::console::find_argument(argc, argv,"-h") > 0)
     {
         std::cout << "HELP!" << std::endl;
-        std::cout << "-f     sequence_directory" << std::endl;
-        std::cout << "-c     calib_file" << std::endl;
-        std::cout << "-s     start_img" << std::endl;
-        std::cout << "-e     end_img" << std::endl;
-        std::cout << "-m     model" << std::endl;
-        std::cout << "-near  near" << std::endl;
-        std::cout << "-far   far"  << std::endl;
+        std::cout << "-f        sequence_directory" << std::endl;
+        std::cout << "-c        calib_file" << std::endl;
+        std::cout << "-s        start_img" << std::endl;
+        std::cout << "-e        end_img" << std::endl;
+        std::cout << "-md       model directory" << std::endl;
+        std::cout << "-mn       model name" << std::endl;
+        std::cout << "-near     near" << std::endl;
+        std::cout << "-far      far"  << std::endl;
+        std::cout << "-th1      canny_threshold1" << std::endl;
+        std::cout << "-th2      canny_threshold2" << std::endl;
+        std::cout << "-bg       background_image" << std::endl;
+        std::cout << "-scale    scaling_factor" << std::endl;
         return 0;
     }
 
@@ -307,7 +333,7 @@ int main(int argc, char **argv)
     std::string scalib;
     pcl::console::parse_argument(argc, argv,"-c",scalib);
     if (scalib.empty())
-        scalib = "/home/alejandro/workspace/colorPC/calibFiles/F200Calib_MRPT.yaml";
+        scalib = "/home/alejandro/workspace/renderer/calibFiles/F200Calib_MRPT.yaml";
     cv::Mat K_depth(3,3,CV_64F),dist_depth(4,1,CV_64F),R(3,3,CV_64F);
     cv::Mat K_color(3,3,CV_64F),dist_color(4,1,CV_64F),t(3,1,CV_64F);
 
@@ -319,9 +345,13 @@ int main(int argc, char **argv)
     pcl::console::parse_argument(argc, argv, "-s", img_start);
     pcl::console::parse_argument(argc, argv, "-e", img_end);
 
-    // Load model
-    std::string plyModel = "/home/alejandro/workspace/renderer/models/box.ply";
-    pcl::console::parse_argument(argc,argv, "-m", plyModel);
+    // Load model directory and name
+    std::string modelDirectory = "/home/alejandro/Models/";
+    std::string modelName = "orange_box";
+    pcl::console::parse_argument(argc,argv, "-md", modelDirectory);
+    pcl::console::parse_argument(argc,argv, "-mn", modelName);
+    std::string plyModel = modelDirectory + modelName + ".ply";
+    std::string objModel = modelDirectory + modelName + ".obj";
 
     // Load near/far rage
     float near = 0.01;
@@ -329,11 +359,24 @@ int main(int argc, char **argv)
     pcl::console::parse_argument(argc, argv, "-near", near);
     pcl::console::parse_argument(argc, argv, "-far", far);
 
-    // Load near/far rage
-    float th1 = 0.2;
-    float th2 = 20;
+    // Load canny thresholds
+    float th1 = 70;
+    float th2 = 80;
     pcl::console::parse_argument(argc, argv, "-th1", th1);
     pcl::console::parse_argument(argc, argv, "-th2", th2);
+
+    // Load background
+    std::string backgroundFile = "/home/alejandro/Models/background.jpg";
+    pcl::console::parse_argument(argc, argv, "-bg", backgroundFile);;
+    cv::Mat img_bg = cv::imread(backgroundFile);
+
+    // Load scaling factor
+    int scaling_factor = 2;
+    pcl::console::parse_argument(argc,argv,"-scale", scaling_factor);
+
+    /*************************************************************
+     *********************   INITIAL IMAGE   *********************
+     *************************************************************/
 
     // Select first image
     std::ostringstream ss;
@@ -345,9 +388,6 @@ int main(int argc, char **argv)
     std::ostringstream ss_color;
     ss_color << std::setfill('0') << std::setw(5) << imcolor1 << ".jpg";
     cv::Mat img_color = cv::imread(sequence_dir+"/color/"+ss_color.str());
-
-    // Load background
-    cv::Mat img_bg = cv::imread("/home/alejandro/Models/background.jpg");
 
     // Generate look-up table to rectify images
     cv::Size size_color(img_color.cols,img_color.rows);
@@ -363,7 +403,6 @@ int main(int argc, char **argv)
     cv::remap(img_bg,img_bg,map_color_x,map_color_y,cv::INTER_NEAREST);
 
     // Set scaling
-    int scaling_factor = 2;
     int width = img_color.cols;
     int height = img_color.rows;
     int width_scaled = width/scaling_factor;
@@ -376,118 +415,96 @@ int main(int argc, char **argv)
     cv::Mat img_bg_scaled;
     cv::resize(img_bg,img_bg_scaled,size);
 
+    // Generate image for visualization
     cv::Mat img_contours(img_color.rows,img_color.cols,CV_8UC3,cv::Scalar(0,0,0));
-    img_color.copyTo(img_contours);//,img_edges);
+    img_color.copyTo(img_contours);
 
+    // Structuring element for dilation/erosion
     cv::Mat element = cv::getStructuringElement( cv::MORPH_RECT, cv::Size( 2*1+1, 2*1+1 ),cv::Point( 1, 1 ) );
 
+    /******************************************************************
+     *********************   INITIAL POSE MODEL   *********************
+     ******************************************************************/
+
     std::vector<cv::Point2d> points2D;
-    points2D = getPointsForPnP(img_color_scaled);
+    points2D = getPointsForPnP(img_color_scaled, scaling_factor);
     ORK_Renderer::Renderer3d renderer = ORK_Renderer::Renderer3d(plyModel);
     Eigen::Matrix4d M = getPoseFromPnP(renderer, width, height, K_color, near, far, points2D);
 
-//    Eigen::Matrix3d rot_mat = M.block<3,3>(0,0);
-//    Eigen::Matrix3d aux = rot_mat;
-//    rot_mat = aux.transpose();
-//    double roll = atan2(rot_mat(2,1), rot_mat(2,2));
-//    double pitch = asin(rot_mat(2,0));
-//    double yaw = -atan2(rot_mat(1,0), rot_mat(0,0));
-//    std::cout << "Roll: " << roll << " Pitch: " << pitch << " Yaw: " << yaw << std::endl;
-//    std::cout << "Roll: " << roll*180/M_PI << " Pitch: " << pitch*180/M_PI << " Yaw: " << yaw*180/M_PI << std::endl;
-
 //    pcl_viewer.snapPLYmodel(plyModel,M, "model");
-//    cv::eigen2cv(M2,M_cv);
-//    pcl_viewer.snapPLYmodel("/home/alejandro/workspace/renderer/models/yellow_box.ply",M_cv, "model2");
 
-//    pcl_viewer.cloud_viewer_.spin();
-    cv::Mat mask_out = cv::Mat(height,width,CV_8U,cv::Scalar(0));
-    cv::Mat img_depth_model;
-    generateModelImagesFromPose(renderer, M, img_depth_model,mask_out);
-    cv::Mat model_normals_initial, img_model_edges_initial;
-    computeEdgesFromNormalMap(img_depth_model, model_normals_initial,img_model_edges_initial);
-    cv::Mat img_model_edges_scaled_initial;
-    cv::resize(img_model_edges_initial,img_model_edges_scaled_initial,size);
-
-    cv::Mat img_orange(img_model_edges_initial.rows,img_model_edges_initial.cols,CV_8UC3,cv::Scalar(0,100,255));
-    img_orange.copyTo( img_contours, img_model_edges_initial);
-
-    imshow("edges superposed", img_contours);
-//    cv::waitKey();
-
-    // Create cloud
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr initial_cloud_color (new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr initial_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-    initial_cloud_color = compute3Dpoints(img_depth,K_depth,img_color,K_color,R,t);
-    pcl::copyPointCloud(*initial_cloud_color,*initial_cloud);
-
-    BackGround bg(initial_cloud);
-//    pcl_viewer.drawRectangle (bg.vertex2c, 255, 255, 255, 1, "table");
-
-
-
-    std::string sModelPath = "/home/alejandro/Models/orange_box.obj";
-//    std::string sModelPath = "/home/alejandro/Models/orange_prism.obj";
 //    pcl::PolygonMesh mesh;
-//    pcl::io::loadPolygonFileOBJ(sModelPath,mesh);
+//    pcl::io::loadPolygonFileOBJ(objModel,mesh);
 //    pcl::PointCloud<pcl::PointXYZ> cloud;
 //    pcl::fromPCLPointCloud2(mesh.cloud, cloud);
 //    pcl::transformPointCloud(cloud, cloud, M);
 //    pcl::toPCLPointCloud2(cloud, mesh.cloud);
 //    pcl_viewer.cloud_viewer_.addPolygonMesh(mesh,"meshes",0);
 
-//    std::string sSrcImage = "/media/DATA/wetlab_v1/f2000/color/01950.jpg";
-//    std::string sCameraMatrix = "/home/alejandro/workspace/PWP3D/Files/CameraCalibration/f2000.cal";
-//    std::string sTargetMask = "/home/alejandro/Models/target_mask.png";
-    cv::Mat target_mask(height_scaled,width_scaled,CV_8U,cv::Scalar(255));
-    // Segment color image in HS space
-    cv::Mat img_color_hsv, img_color_h, img_color_s;
-    cv::cvtColor(img_color_scaled, img_color_hsv, cv::COLOR_BGR2HSV);
-    std::vector<cv::Mat> channels;
-    split(img_color_hsv, channels);
-    img_color_h = channels[0]; img_color_h.convertTo(img_color_h,CV_32F);
-    img_color_s = channels[1]; img_color_s.convertTo(img_color_s,CV_32F);
-    cv::Mat image_dif_h = (90 - abs(abs(img_color_h-142)-90))/179;
-    cv::Mat image_dif_s = abs(img_color_s-127)/255;
-    cv::Mat image_dif = (0.9*image_dif_h + 0.1*image_dif_s);
-//    target_mask = (image_dif > 0.1)*255;
-    cv::Mat hand_mask_scaled(height,width,CV_8U,cv::Scalar(255));
-    hand_mask_scaled = (image_dif < 0.1)*255;
-
-    cv::Mat img_bg_hsv, img_bg_h, img_bg_s;
-    cv::cvtColor(img_bg_scaled, img_bg_hsv, cv::COLOR_BGR2HSV);
-    split(img_bg_hsv, channels);
-    img_bg_h = channels[0]; img_bg_h.convertTo(img_bg_h,CV_32F);
-    img_bg_s = channels[1]; img_bg_s.convertTo(img_bg_s,CV_32F);
-    image_dif_h = (90 - abs(abs(img_bg_h-img_color_h)-90))/179;
-    image_dif_s = abs(img_bg_s-img_color_s)/255;
-    image_dif = (0.3*image_dif_h + 0.7*image_dif_s);
-    cv::Mat mask_bg_scaled = image_dif < 0.1;
-    cv::Mat mask_bg;
-    cv::resize(mask_bg_scaled,mask_bg,size*2);
-    cv::Mat mask_fg, mask_fg_scaled;
-    mask_fg = 255-mask_bg;
-    cv::resize(mask_fg,mask_fg_scaled,size);
-
+    cv::Mat mask_out = cv::Mat(height,width,CV_8U,cv::Scalar(0));
+    cv::Mat img_depth_model;
+    generateModelImagesFromPose(renderer, M, img_depth_model,mask_out);
     cv::Mat mask_out_scaled;
     cv::resize(mask_out,mask_out_scaled,size);
     cv::erode(mask_out,mask_out,element);
-//    mask_out = 255 - mask_out;
-//    mask_out = cv::imread("/home/alejandro/Models/mask.png");
-//    std::cout << mask_out << std::endl;
 
-//    imshow("mask",mask_out);
+    cv::Mat model_normals, img_model_edges;
+    computeEdgesFromNormalMap(img_depth_model, model_normals,img_model_edges);
+    cv::Mat img_model_edges_scaled;
+    cv::resize(img_model_edges,img_model_edges_scaled,size);
+
+    cv::Mat img_orange(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(0,100,255));
+    img_orange.copyTo( img_contours, img_model_edges);
+
+    imshow("edges superposed", img_contours);
+
+    /********************************************************************
+     *********************   CLOUD AND TABLE FIND   *********************
+     ********************************************************************/
+
+//    // Create cloud
+//    pcl::PointCloud<pcl::PointXYZRGB>::Ptr initial_cloud_color (new pcl::PointCloud<pcl::PointXYZRGB>);
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr initial_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+//    initial_cloud_color = compute3Dpoints(img_depth,K_depth,img_color,K_color,R,t);
+//    pcl::copyPointCloud(*initial_cloud_color,*initial_cloud);
+
+//    BackGround bg(initial_cloud);
+////    pcl_viewer.drawRectangle (bg.vertex2c, 255, 255, 255, 1, "table");
+
+    /******************************************************************************
+     *********************   HAND AND BACKGROUND PROCESSING   *********************
+     ******************************************************************************/
+
+    cv::Mat target_mask(height_scaled,width_scaled,CV_8U,cv::Scalar(255));
+
+    // Hand segmentation
+    cv::Mat hand_mask(height,width,CV_8U,cv::Scalar(255));
+    cv::Mat non_hand_mask(height,width,CV_8U,cv::Scalar(255));
+    hsSegment(img_color, 0.1, 142, 127, 0.9,0.1,hand_mask,non_hand_mask);
+    cv::Mat hand_mask_scaled;
+    cv::resize(hand_mask,hand_mask_scaled,size);
+
+    // Background segmentation
+    cv::Mat mask_bg(height,width,CV_8U,cv::Scalar(255));
+    cv::Mat mask_fg(height,width,CV_8U,cv::Scalar(255));
+    hsSegment(img_color, 0.1, img_bg, 0.3, 0.7,mask_bg, mask_fg);
+    cv::Mat mask_bg_scaled;
+    cv::resize(mask_bg,mask_bg_scaled,size);
+    cv::Mat mask_fg_scaled;
+    cv::resize(mask_fg,mask_fg_scaled,size);
+
+
+    /***************************************************************
+     *********************   CONFIGURE PWP3D   *********************
+     ***************************************************************/
 
     int viewCount = 1, objectCount = 1;
     int objectId = 0, viewIdx = 0, objectIdx = 0;
 
     //result visualisation
     ImageUChar4* ResultImage = new ImageUChar4(width_scaled, height_scaled);
-
     ImageUChar4* camera = new ImageUChar4(width_scaled, height_scaled);
-//        ImageUtils::Instance()->LoadImageFromFile(camera, (char*)sSrcImage.c_str());
     cv::Mat img_color4C = cv::Mat(height_scaled,width_scaled,CV_8UC4);
-//    int from_to[] = { 0,0, 1,1, 2,2,};
-//    cv::mixChannels(&img_color,2,&img_color4C,1,from_to,3);
     std::vector<cv::Mat> rgbChannels(4);
     cv::split(img_color_scaled, rgbChannels);
     cv::Mat alpha_mask(height_scaled,width_scaled,CV_8U,cv::Scalar(255));
@@ -496,20 +513,13 @@ int main(int argc, char **argv)
     ImageUtils::Instance()->LoadImageFromCVMat(camera, img_color4C);
 
     Object3D **objects = new Object3D*[objectCount];
-    objects[objectIdx] = new Object3D(objectId, viewCount, (char*)sModelPath.c_str(), width_scaled, height_scaled);
+    objects[objectIdx] = new Object3D(objectId, viewCount, (char*)objModel.c_str(), width_scaled, height_scaled);
 
     View3D **views = new View3D*[viewCount];
-//    views[viewIdx] = new View3D(0, (char*)sCameraMatrix.c_str(), width, height);
     views[viewIdx] = new View3D(viewIdx, width_scaled, height_scaled, K_color_scaled.at<double>(0,0), K_color_scaled.at<double>(1,1), K_color_scaled.at<double>(0,2), height_scaled - K_color_scaled.at<double>(1,2),width_scaled, height_scaled,near,far);
 
-//    ImageUtils::Instance()->LoadImageFromFile(views[viewIdx]->videoMask,
-//                                              (char*)sTargetMask.c_str());
     ImageUtils::Instance()->LoadImageFromCVMat(views[viewIdx]->videoMask,
                                               target_mask);
-
-        cv::Mat hand_mask;
-    //    cv::resize(hand_mask_scaled,hand_mask,size*2);
-    ////    cv::bitwise_or(hand_mask_scaled,mask_out_scaled,mask_out_scaled);
 
     // Load histogram from first image
     ImageUtils::Instance()->LoadImageFromCVMat(objects[objectIdx]->histSources[viewIdx], img_color4C);
@@ -539,14 +549,16 @@ int main(int argc, char **argv)
     iterConfig->iterCount = 1;
     iterConfig->useCUDAEF = true;
     iterConfig->useCUDARender = true;
-//    iterConfig->useCUDAEF = false;
-//    iterConfig->useCUDARender = false;
 
 //    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.2f, 0.01f, 0.01f, 0.01f);
     objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.05f, 0.0005f, 0.0005f, 0.0005f);
 //    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.01f, 0.0001f, 0.0001f, 0.0001f);
 //    float step_size = 10/((K_color.at<float>(0,0)+K_color.at<float>(1,1))/2);
 //    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.5f, step_size,step_size, step_size);
+
+    /********************************************************************
+     *********************   INITIALIZE PWP3D POSE  *********************
+     ********************************************************************/
 
     VFLOAT *rot;
     rot =(VFLOAT [9]) {M(0,0),M(0,1),M(0,2),M(1,0),M(1,1),M(1,2),M(2,0),M(2,1),M(2,2)};
@@ -556,128 +568,48 @@ int main(int argc, char **argv)
     OptimisationEngine::Instance()->Initialise(width_scaled, height_scaled);
     OptimisationEngine::Instance()->RegisterViewImage(views[viewIdx], camera);
 
-    //result plot
-    VisualisationEngine::Instance()->GetImage(
-          ResultImage, GETIMAGE_PROXIMITY,
-          objects[objectIdx], views[viewIdx], objects[objectIdx]->initialPose[viewIdx]);
-
-    //result save to file
-//    ImageUtils::Instance()->SaveImageToFile(ResultImage, str);
-    cv::Mat InitMat(height_scaled,width_scaled,CV_8UC4, ResultImage->pixels);
-//    cv::resize(InitMat,InitMat,size);
-    imshow("edges superposed", InitMat);
-//    cv::waitKey();
-
-    OptimisationEngine::Instance()->Minimise(objects, views, iterConfig);
-
-    Eigen::Vector4d quat = Eigen::Vector4d(objects[objectIdx]->pose[viewIdx]->rotation->vector4d.x,
-                                           objects[objectIdx]->pose[viewIdx]->rotation->vector4d.y,
-                                           objects[objectIdx]->pose[viewIdx]->rotation->vector4d.z,
-                                           objects[objectIdx]->pose[viewIdx]->rotation->vector4d.w);
-    Eigen::Matrix3d rot_mat = quatToMatrix(quat);
-    Eigen::Vector3d trans = Eigen::Vector3d(objects[objectIdx]->pose[viewIdx]->translation->x,
-                                            objects[objectIdx]->pose[viewIdx]->translation->y,
-                                            objects[objectIdx]->pose[viewIdx]->translation->z);
-    double m2[16] ={rot_mat(0,0),rot_mat(1,0),rot_mat(2,0),0.0,
-                    rot_mat(0,1),rot_mat(1,1),rot_mat(2,1),0.0,
-                    rot_mat(0,2),rot_mat(1,2),rot_mat(2,2),0.0,
-                    trans(0), trans(1), trans(2), 1.0
-                   };
+//    //result plot
+//    VisualisationEngine::Instance()->GetImage(
+//          ResultImage, GETIMAGE_PROXIMITY,
+//          objects[objectIdx], views[viewIdx], objects[objectIdx]->initialPose[viewIdx]);
+//    cv::Mat InitMat(height_scaled,width_scaled,CV_8UC4, ResultImage->pixels);
+//    imshow("edges superposed", InitMat);
 
 
-
-    //result plot
-    VisualisationEngine::Instance()->GetImage(
-          ResultImage, GETIMAGE_PROXIMITY,
-          objects[objectIdx], views[viewIdx], objects[objectIdx]->pose[viewIdx]);
-
-    //result save to file
-//    ImageUtils::Instance()->SaveImageToFile(ResultImage, str);
-    cv::Mat ResultMat(height_scaled,width_scaled,CV_8UC4, ResultImage->pixels);
-//    cv::resize(ResultMat,ResultMat,size);
-    imshow("edges superposed", ResultMat);
-//    cv::waitKey();
-
-    Eigen::Matrix4d M2(m2) ;
-//    pcl_viewer.snapPLYmodel("/home/alejandro/workspace/renderer/models/yellow_box.ply",M2, "model2");
-
-//    std::cout << M << std::endl << std::endl;
-//    std::cout << M2 << std::endl;
-
-//    pcl::io::loadPolygonFileOBJ(sModelPath,mesh);
-//    pcl::fromPCLPointCloud2(mesh.cloud, cloud);
-//    pcl::transformPointCloud(cloud, cloud, M2);
-//    pcl::toPCLPointCloud2(cloud, mesh.cloud);
-//    pcl_viewer.cloud_viewer_.addPolygonMesh(mesh,"meshes2",0);
-
-//    Eigen::Matrix4d M2;
-//    M2 = M;
-
-    generateModelImagesFromPose(renderer, M2, img_depth_model,mask_out);
-//    imshow("depth",falseColor(img_depth_model));
-//    imshow("mask",mask_out);
-//    cv::waitKey();
-    cv::Mat model_normals, img_model_edges;
-    computeEdgesFromNormalMap(img_depth_model, model_normals,img_model_edges);
-    cv::Mat img_model_edges_scaled;
-    cv::resize(img_model_edges,img_model_edges_scaled,size);
-
-    cv::Mat prev_img_color4C_scaled;
-    img_color4C.copyTo(prev_img_color4C_scaled);
+//    cv::Mat prev_img_color4C_scaled;
+//    img_color4C.copyTo(prev_img_color4C_scaled);
 
     for (int i = img_start; i <= img_end; i++)
-//    int i = img_start+2;
     {
-
         printf("frame %d/%d\n", i, img_end);
 
-        //Load depth image
+        // Get depth/color/edge images corrected and scaled
         std::ostringstream ss;
         ss << std::setfill('0') << std::setw(5) << i << ".png";
         img_depth = cv::imread(sequence_dir+"/depth/"+ss.str(),CV_LOAD_IMAGE_ANYDEPTH);
         img_depth.convertTo(img_depth,CV_32F);
-
         //Load the closest color image
         double timestampd1 = ts_depth1.at<double>(i);
         int imcolor1 = getTimestamp(ts_color1,timestampd1);
         std::ostringstream ss_color;
         ss_color << std::setfill('0') << std::setw(5) << imcolor1 << ".jpg";
         img_color = cv::imread(sequence_dir+"/color/"+ss_color.str());
-
         // Undistort
         cv::remap(img_color,img_color,map_color_x,map_color_y,cv::INTER_NEAREST);
         cv::remap(img_depth,img_depth,map_depth_x,map_depth_y,cv::INTER_NEAREST);
-
         cv::resize(img_color,img_color_scaled,size);
-
         cv::Mat img_edges = canny(img_color,th1,th2);
-//        img_edges = sobel(img_color_scaled);
-//        imshow("edges", img_edges);
 
-//////////////////////ç//////////////////////ç//////////////////////ç//////////////////////ç
+        cv::split(img_color_scaled, rgbChannels);
+        cv::Mat alpha_mask(height_scaled,width_scaled,CV_8U,cv::Scalar(255));
+        rgbChannels.push_back(alpha_mask);
+        cv::merge(rgbChannels, img_color4C);
+        ImageUtils::Instance()->LoadImageFromCVMat(camera, img_color4C);
 
-
-
-        cv::cvtColor(img_color_scaled, img_color_hsv, cv::COLOR_BGR2HSV);
-        std::vector<cv::Mat> channels;
-        split(img_color_hsv, channels);
-        img_color_h = channels[0];
-        img_color_s = channels[1];
-        img_color_h.convertTo(img_color_h,CV_32F);
-        img_color_s.convertTo(img_color_s,CV_32F);
-        image_dif_h = (90 - abs(abs(img_color_h-142)-90))/179;
-        image_dif_s = abs(img_color_s-127)/255;
-        image_dif = (0.9*image_dif_h + 0.1*image_dif_s);
-        target_mask = (image_dif > 0.1)*255;
-        hand_mask_scaled = (image_dif < 0.1)*255;
-        cv::resize(hand_mask_scaled,hand_mask,size*2);
-
-        image_dif_h = (90 - abs(abs(img_bg_h-img_color_h)-90))/179;
-        image_dif_s = abs(img_bg_s-img_color_s)/255;
-        image_dif = (0.9*image_dif_h + 0.1*image_dif_s);
-        mask_bg_scaled = image_dif < 0.05;
-        cv::resize(mask_bg_scaled,mask_bg,size*2);
-        mask_fg = 255-mask_bg;
+        hsSegment(img_color, 0.1, 142, 127, 0.9,0.1,hand_mask,non_hand_mask);
+        cv::resize(hand_mask,hand_mask_scaled,size);
+        hsSegment(img_color, 0.1, img_bg, 0.3, 0.7,mask_bg, mask_fg);
+        cv::resize(mask_bg,mask_bg_scaled,size);
         cv::resize(mask_fg,mask_fg_scaled,size);
 
 //        cv::Mat target_mask_scaled;
@@ -689,20 +621,17 @@ int main(int argc, char **argv)
 //        overlap_mask /= 255;
 //        overlap_mask = overlap_mask*(objectIdx+1);
 
-//        cv::Mat img_black(img_color_scaled.rows,img_color_scaled.cols,CV_8UC3,cv::Scalar(0,0,0));
-//        img_black.copyTo(img_color_scaled,overlap_mask_scaled);
+        // Copy hands and bg to reach PWP3D
+//        cv::Mat img_black(img_color.rows,img_color.cols,CV_8UC3,cv::Scalar(0,0,0));
+//        img_black.copyTo(img_color,overlap_mask_scaled);
         cv::Mat img_gray(img_color_scaled.rows,img_color_scaled.cols,CV_8UC3,cv::Scalar(0,0,1));
         img_gray.copyTo(img_color_scaled,hand_mask_scaled);
-//        img_black.copyTo(img_color_scaled,hand_mask_scaled);
+//        img_black.copyTo(img_color,hand_mask);
         cv::Mat img_white(img_color_scaled.rows,img_color_scaled.cols,CV_8UC3,cv::Scalar(255,255,255));
         img_white.copyTo(img_color_scaled,mask_bg_scaled);
 
 
-        cv::split(img_color_scaled, rgbChannels);
-        cv::Mat alpha_mask(height_scaled,width_scaled,CV_8U,cv::Scalar(255));
-        rgbChannels.push_back(alpha_mask);
-        cv::merge(rgbChannels, img_color4C);
-        ImageUtils::Instance()->LoadImageFromCVMat(camera, img_color4C);
+
 
 //        cv::bitwise_or(mask_out_scaled,overlap_mask_scaled,mask_out_scaled);
 //        cv::Mat img_histogram;
@@ -728,39 +657,32 @@ int main(int argc, char **argv)
 
         OptimisationEngine::Instance()->RegisterViewImage(views[viewIdx], camera);
 
-        Eigen::Matrix4d prev_M = M2;
+        Eigen::Matrix4d prev_M = M;
 
         int i= 0;
-//        for (i=0; i<100; i++)
         bool loop = false;
         timer.restart();
 
-        while (i<200)
+        while (i<50)
         {
             OptimisationEngine::Instance()->Minimise(objects, views, iterConfig);
 
             objects[objectIdx]->pose[viewIdx]->CopyInto(objects[objectIdx]->initialPose[viewIdx]);
 
-            quat = Eigen::Vector4d(objects[objectIdx]->pose[viewIdx]->rotation->vector4d.x,
+            Eigen::Vector4d quat = Eigen::Vector4d(objects[objectIdx]->pose[viewIdx]->rotation->vector4d.x,
                                    objects[objectIdx]->pose[viewIdx]->rotation->vector4d.y,
                                    objects[objectIdx]->pose[viewIdx]->rotation->vector4d.z,
                                    objects[objectIdx]->pose[viewIdx]->rotation->vector4d.w);
-            rot_mat = quatToMatrix(quat);
-            trans = Eigen::Vector3d(objects[objectIdx]->pose[viewIdx]->translation->x,
+            Eigen::Matrix3d rot_mat = quatToMatrix(quat);
+            Eigen::Vector3d trans = Eigen::Vector3d(objects[objectIdx]->pose[viewIdx]->translation->x,
                                     objects[objectIdx]->pose[viewIdx]->translation->y,
                                     objects[objectIdx]->pose[viewIdx]->translation->z);
 
-
-            //        M2=Eigen::Matrix4d(m2) ;
-            M2.block<3,3>(0,0) = rot_mat;
-            M2.block<3,1>(0,3) = trans;
-
-            //        M2(0,3) = M2(0,3)+0.005;
-
-//            std::cout << "M2: \n" << M2 << std::endl;
+            M.block<3,3>(0,0) = rot_mat;
+            M.block<3,1>(0,3) = trans;
 
             Eigen::Matrix4d M_diff;
-            M_diff = prev_M.inverse()*M2;
+            M_diff = prev_M.inverse()*M;
 
             float x,y,z,roll,pitch,yaw;
             Eigen::Affine3f matrix_aux = Eigen::Translation3f(M_diff.block<3,1>(0,3).cast<float>()) * Eigen::AngleAxisf(M_diff.block<3,3>(0,0).cast<float>());
@@ -772,7 +694,7 @@ int main(int argc, char **argv)
                 break;
             else
             {
-                if ((i==199) && (loop == false))
+                if ((i==49) && (loop == false))
                 {
 //                    std::cout << i << std::endl;
 
@@ -789,7 +711,7 @@ int main(int argc, char **argv)
 //            std::cout << "Pitch: " << pitch*180/M_PI << std::endl;
 //            std::cout << "Yaw: " << yaw*180/M_PI << std::endl;
 
-            prev_M = M2;
+            prev_M = M;
 
             i = i+1;
         }
@@ -799,23 +721,12 @@ int main(int argc, char **argv)
 
 //        std::cout << i << std::endl;
 
-        generateModelImagesFromPose(renderer, M2, img_depth_model,mask_out);
+        generateModelImagesFromPose(renderer, M, img_depth_model,mask_out);
         cv::resize(mask_out,mask_out_scaled,size);
         computeEdgesFromNormalMap(img_depth_model, model_normals,img_model_edges);
 
-
-
 //        pcl_viewer.cloud_viewer_.removeShape("model");
 //        pcl_viewer.snapPLYmodel(plyModel,M2, "model");
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
 
         img_color.copyTo(img_contours);//,img_edges);
         cv::Mat img_blue(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(255,0,0));
@@ -832,19 +743,6 @@ int main(int argc, char **argv)
 //        cv::Mat img_purple(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(255,0,180));
 //        img_purple.copyTo(img_contours,mask_bg);
 
-//        std::vector<std::vector<cv::Point> > contours;
-//        std::vector<cv::Vec4i> hierarchy;
-
-//        /// Find contours
-//        cv::findContours( img_model_edges, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
-
-//        /// Draw contours
-//        cv::Mat drawing = cv::Mat::zeros( img_edges.size(), CV_8UC3 );
-//        for( int i = 0; i< contours.size(); i++ )
-//        {
-//            cv::Scalar color = cv::Scalar(0,255,0 );
-//            cv::drawContours( drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point() );
-//        }
 
 
         imshow("edges superposed", img_contours);
@@ -865,7 +763,7 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        img_color4C.copyTo(prev_img_color4C_scaled);
+//        img_color4C.copyTo(prev_img_color4C_scaled);
 //        cv::waitKey();
     }
 

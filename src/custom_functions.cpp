@@ -1180,3 +1180,41 @@ void detectionToOpenGL(const Eigen::Matrix4f &M, double m[16], const cv::Mat &K,
      for (int i=0; i< 16; i++)
           m[i] = (double) mvp(i);
 }
+
+void hsSegment(cv::Mat img_color, float th, int th_h, int th_s, float w_h, float w_s, cv::Mat & mask_below, cv::Mat & mask_above)
+{
+    cv::Mat img_color_hsv, img_color_h, img_color_s;
+    cv::cvtColor(img_color, img_color_hsv, cv::COLOR_BGR2HSV);
+    std::vector<cv::Mat> channels;
+    split(img_color_hsv, channels);
+    img_color_h = channels[0]; img_color_h.convertTo(img_color_h,CV_32F);
+    img_color_s = channels[1]; img_color_s.convertTo(img_color_s,CV_32F);
+    cv::Mat image_dif_h = (90 - abs(abs(img_color_h-th_h)-90))/179;
+    cv::Mat image_dif_s = abs(img_color_s-th_s)/255;
+    cv::Mat image_dif = (w_h*image_dif_h + w_s*image_dif_s);
+    mask_below = (image_dif < th)*255;
+    mask_above = 255 - mask_below;
+}
+
+void hsSegment(cv::Mat img_color, float th, cv::Mat img_bg, float w_h, float w_s, cv::Mat & mask_below, cv::Mat & mask_above)
+{
+    cv::Mat img_color_hsv, img_color_h, img_color_s;
+    cv::cvtColor(img_color, img_color_hsv, cv::COLOR_BGR2HSV);
+    std::vector<cv::Mat> channels;
+    split(img_color_hsv, channels);
+    img_color_h = channels[0]; img_color_h.convertTo(img_color_h,CV_32F);
+    img_color_s = channels[1]; img_color_s.convertTo(img_color_s,CV_32F);
+
+    cv::Mat img_bg_hsv, img_bg_h, img_bg_s;
+    cv::cvtColor(img_bg, img_bg_hsv, cv::COLOR_BGR2HSV);
+    split(img_bg_hsv, channels);
+    img_bg_h = channels[0]; img_bg_h.convertTo(img_bg_h,CV_32F);
+    img_bg_s = channels[1]; img_bg_s.convertTo(img_bg_s,CV_32F);
+
+    cv::Mat image_dif_h = (90 - abs(abs(img_bg_h-img_color_h)-90))/179;
+    cv::Mat image_dif_s = abs(img_bg_s-img_color_s)/255;
+    cv::Mat image_dif = (w_h*image_dif_h + w_s*image_dif_s);
+    mask_below = (image_dif < th)*255;
+    mask_above = 255 - mask_below;
+
+}
