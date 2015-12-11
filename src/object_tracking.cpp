@@ -111,24 +111,24 @@ std::vector<cv::Point2d>  getPointsForPnP(cv::Mat img, int scale)
 {
     std::vector<cv::Point2d> points2D;
 
-    // 1. Image cropper
-    cv::Mat img_to_click;
-    img_to_click = img;
-//    cv::Mat img_edges;
-//    img_edges = canny(img_color_scaled,th1,th2);
-//    img_to_click = img_edges;
-    std::string  src_window = "CROP";
-    ImageCropper imc(src_window,6);
-    cv::setMouseCallback(src_window.c_str(),&ImageCropper::mouseCallbackPoints,&imc);
-    imc.setImage(img_to_click);
-    imshow(src_window.c_str(),img_to_click);
-    cv::moveWindow(src_window.c_str(),0,0);
-    imc.getPoints(&points2D);
-    while (points2D.size() < 4)
-    {
-        imc.getPoints(&points2D);
-        cv::waitKey(2);
-    }
+//    // 1. Image cropper
+//    cv::Mat img_to_click;
+//    img_to_click = img;
+////    cv::Mat img_edges;
+////    img_edges = canny(img_color_scaled,th1,th2);
+////    img_to_click = img_edges;
+//    std::string  src_window = "CROP";
+//    ImageCropper imc(src_window,6);
+//    cv::setMouseCallback(src_window.c_str(),&ImageCropper::mouseCallbackPoints,&imc);
+//    imc.setImage(img_to_click);
+//    imshow(src_window.c_str(),img_to_click);
+//    cv::moveWindow(src_window.c_str(),0,0);
+//    imc.getPoints(&points2D);
+//    while (points2D.size() < 6)
+//    {
+//        imc.getPoints(&points2D);
+//        cv::waitKey(2);
+//    }
 
 //    imc.getPoints(&points2D);
 //    cv::destroyWindow(src_window.c_str());
@@ -142,14 +142,14 @@ std::vector<cv::Point2d>  getPointsForPnP(cv::Mat img, int scale)
 //    points2D.push_back(cv::Point2d(534,533));
 //    points2D.push_back(cv::Point2d(505,300));
 //    points2D.push_back(cv::Point2d(562,294));
-//    // Start 4675
-//    scale = 2;
-//    points2D.push_back(cv::Point2d(821,413));
-//    points2D.push_back(cv::Point2d(881,399));
-//    points2D.push_back(cv::Point2d(856,492));
-//    points2D.push_back(cv::Point2d(793,503));
-//    points2D.push_back(cv::Point2d(702,291));
-//    points2D.push_back(cv::Point2d(749,284));
+    // Start 4675
+    scale = 2;
+    points2D.push_back(cv::Point2d(821,413));
+    points2D.push_back(cv::Point2d(881,399));
+    points2D.push_back(cv::Point2d(856,492));
+    points2D.push_back(cv::Point2d(793,503));
+    points2D.push_back(cv::Point2d(702,291));
+    points2D.push_back(cv::Point2d(749,284));
 //    // Start 18010
 //    scale = 2;
 //    points2D.push_back(cv::Point2d(438,400));
@@ -159,7 +159,7 @@ std::vector<cv::Point2d>  getPointsForPnP(cv::Mat img, int scale)
 //    points2D.push_back(cv::Point2d(199,398));
 //    points2D.push_back(cv::Point2d(228,357));
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 6; i++)
         points2D[i] *= scale;//scaling_factor;
 
     return points2D;
@@ -177,8 +177,8 @@ Eigen::Matrix4d getPoseFromPnP(ORK_Renderer::Renderer3d &renderer, int width, in
 
     std::vector<cv::Point3d> points3D;
     cv::Mat_<double> rvec, tvec,rotM;
-//    points3D = boxModel();
-    points3D = cylinderModel();
+    points3D = boxModel();
+//    points3D = cylinderModel();
     cv::solvePnP(points3D,points2D,K_color,cv::Mat() ,rvec,tvec,false, CV_ITERATIVE); // CV_EPNP CV_ITERATIVE
 
     Rodrigues(rvec,rotM);
@@ -560,20 +560,10 @@ int main(int argc, char **argv)
      *********************   INITIALIZE PWP3D POSE  *********************
      ********************************************************************/
 
-    VFLOAT rot[9];  
-
-    rot[0] = M(0,0);
-    rot[1] = M(0,1);
-    rot[2] = M(0,2);
-    rot[3] = M(1,0);
-    rot[4] = M(1,1);
-    rot[5] = M(1,2);
-    rot[6] = M(2,0);
-    rot[7] = M(2,1);
-    rot[8] = M(2,2);
-
-
-    objects[objectIdx]->initialPose[viewIdx]->SetFrom( M(0,3), M(1,3), M(2,3), rot);
+    VFLOAT *rot;
+    rot =(VFLOAT [9]) {M(0,0),M(0,1),M(0,2),M(1,0),M(1,1),M(1,2),M(2,0),M(2,1),M(2,2)};
+    objects[objectIdx]->initialPose[viewIdx]->SetFrom(
+            M(0,3), M(1,3), M(2,3), rot);
 
     OptimisationEngine::Instance()->Initialise(width_scaled, height_scaled);
     OptimisationEngine::Instance()->RegisterViewImage(views[viewIdx], camera);
@@ -669,7 +659,7 @@ int main(int argc, char **argv)
 
         Eigen::Matrix4d prev_M = M;
 
-        int j= 0;
+        int j = 0;
         bool loop = false;
         timer.restart();
 
@@ -704,12 +694,12 @@ int main(int argc, char **argv)
                 break;
             else
             {
-                if ((i==49) && (loop == false))
+                if ((j==49) && (loop == false))
                 {
 //                    std::cout << i << std::endl;
 
                     objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.01f, 0.001f, 0.001f, 0.001f);
-                    i = 0;
+                    j = 0;
                     loop = true;
                 }
             }

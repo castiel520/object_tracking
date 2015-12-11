@@ -9,6 +9,7 @@ string( TOLOWER ${PROJECT_NAME} LIBRARY_NAME )
 ################################################################################
 
 list(APPEND SRC_H
+
 CUDA/CUDAConvolution.h
 CUDA/CUDAData.h
 CUDA/CUDADT.h
@@ -17,6 +18,7 @@ CUDA/CUDAEngine.h
 CUDA/CUDARenderer.h
 CUDA/CUDAScharr.h
 CUDA/CUDAUtils.h 
+CUDA/CUDADefines.h
 
 Objects/HistogramVarBin.h
 Objects/ImageRender.h
@@ -50,6 +52,7 @@ Renderer/Model/ModelFace.h
 Renderer/Model/ModelGroup.h
 Renderer/Model/ModelH.h
 Renderer/Model/ModelVertex.h
+Renderer/Model/ModelVertexH.h
 Renderer/Objects/Renderer3DObject.h
 Renderer/Objects/Renderer3DView.h
 Renderer/Primitives/Camera3D.h
@@ -140,7 +143,7 @@ if(FREEIMAGE_FOUND)
     list(APPEND LINK_LIBS ${FREEIMAGE_LIBRARIES} )
 endif()
 
-find_package( ASSIMP REQUIRED )
+find_package( ASSIMP REQUIRED PATHS /home/alejandro/libs/assimp-3.1.1/cmake-modules)
 if(ASSIMP_FOUND)
     set(HAVE_ASSIMP 1)
     list(APPEND USER_INC ${ASSIMP_INCLUDE_DIR})
@@ -220,9 +223,15 @@ export( PACKAGE ${PROJECT_NAME} )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/config.h"
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
 )
-install(FILES ${SRC_H}
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
-)
+
+foreach ( file ${SRC_H} )
+    get_filename_component( dir ${file} DIRECTORY )
+    install( FILES ${file} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/PerseusLib/${dir} )
+endforeach()
+
+#install(DIRECTORY ${SRC_H}
+#  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
+#)
 install(TARGETS ${LIBRARY_NAME}
   EXPORT "${PROJECT_NAME}Targets"
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
