@@ -1,36 +1,18 @@
-#include "../PerseusLib/PerseusLib.h"
+#include <PerseusLib/PerseusLib.h>
 
 #include "Utils/Timer.h"
 #include <opencv2/opencv.hpp>
 
 using namespace Perseus::Utils;
 
-void imshow(std::string name, cv::Mat image)
-{
-    cv::namedWindow(name,CV_WINDOW_NORMAL);
-    cv::resizeWindow(name,480,270);
-    cv::imshow(name, image);
-    cv::waitKey(20);
-//    cv::waitKey();
-
-}
-
 int main(void)
 {
-    std::string sModelPath = "/home/alejandro/Models/orange_tube_holder7.obj";
-//    std::string sModelPath = "/home/alejandro/Models/mini_orange_box.obj";
-    std::string sSrcImage = "/media/DATA/wetlab_v1/f2000/color/01950.jpg";
-    std::string sCameraMatrix = "/home/alejandro/workspace/PWP3D/Files/CameraCalibration/f2000.cal";
-    std::string sTargetMask = "/home/alejandro/Models/target_mask.png";
-    std::string sHistSrc = "/media/DATA/wetlab_v1/f2000/color/01950.jpg";
-    std::string sHistMask = "/home/alejandro/Models/mask.png";
-
-//    std::string sModelPath = "/home/alejandro/workspace/PWP3D/Files/Models/Renderer/long.obj";
-//    std::string sSrcImage = "/home/alejandro/workspace/PWP3D/Files/Images/Red.png";
-//    std::string sCameraMatrix = "/home/alejandro/workspace/PWP3D/Files/CameraCalibration/900nc.cal";
-//    std::string sTargetMask = "/home/alejandro/workspace/PWP3D/Files/Masks/480p_All_VideoMask.png";
-//    std::string sHistSrc = "/home/alejandro/workspace/PWP3D/Files/Masks/Red_Source.png";
-//    std::string sHistMask = "/home/alejandro/workspace/PWP3D/Files/Masks/Red_Mask.png";
+  //  std::string sModelPath = "/Users/luma/Code/Luma/PWP3D/Files/Models/Renderer/long.obj";
+  //  std::string sSrcImage = "/Users/luma/Code/Luma/PWP3D/Files/Images/Red.png";
+  //  std::string sCameraMatrix = "/Users/luma/Code/Luma/PWP3D/Files/CameraCalibration/900nc.cal";
+  //  std::string sTargetMask = "/Users/luma/Code/Luma/PWP3D/Files/Masks/480p_All_VideoMask.png";
+  //  std::string sHistSrc = "/Users/luma/Code/Luma/PWP3D/Files/Masks/Red_Source.png";
+  //  std::string sHistMask = "/Users/luma/Code/Luma/PWP3D/Files/Masks/Red_Mask.png";
 
 
   // blue car demo
@@ -41,22 +23,19 @@ int main(void)
   //  std::string sHistSrc = "/Users/luma/Code/Luma/PWP3D/Files/Images/248-LiveRGB.png";
   //  std::string sHistMask = "/Users/luma/Code/Luma/PWP3D/Files/Masks/248-ID-3-LiveImage.png";
 
-//  // red can demo
-//  std::string sModelPath = "/Users/luma/Code/DataSet/Mesh/RedCan.obj";
-//  std::string sSrcImage = "/Users/luma/Code/Luma/PWP3D/Files/Images/248-LiveRGB.png";
-//  std::string sCameraMatrix = "/Users/luma/Code/Luma/PWP3D/Files/CameraCalibration/Kinect.cal";
-//  std::string sTargetMask = "/Users/luma/Code/Luma/PWP3D/Files/Masks/480p_All_VideoMask.png";
-//  std::string sHistSrc = "/Users/luma/Code/Luma/PWP3D/Files/Images/248-LiveRGB.png";
-//  std::string sHistMask = "/Users/luma/Code/Luma/PWP3D/Files/Masks/248-ID-1-LiveImage.png";
+  // red can demo
+  std::string sModelPath = "/Users/luma/Code/DataSet/Mesh/RedCan.obj";
+  std::string sSrcImage = "/Users/luma/Code/Luma/PWP3D/Files/Images/248-LiveRGB.png";
+  std::string sCameraMatrix = "/Users/luma/Code/Luma/PWP3D/Files/CameraCalibration/Kinect.cal";
+  std::string sTargetMask = "/Users/luma/Code/Luma/PWP3D/Files/Masks/480p_All_VideoMask.png";
+  std::string sHistSrc = "/Users/luma/Code/Luma/PWP3D/Files/Images/248-LiveRGB.png";
+  std::string sHistMask = "/Users/luma/Code/Luma/PWP3D/Files/Masks/248-ID-1-LiveImage.png";
 
   // ---------------------------------------------------------------------------
   char str[100];
   int i;
 
-  int width = 1920, height = 1080;
-//  cv::Mat target_mask(height,width,CV_8UC1,cv::Scalar(255));
-//  cv::imwrite("target_mask.png",target_mask);
-
+  int width = 640, height = 480;
   int viewCount = 1, objectCount = 1;
   int objectId = 0, viewIdx = 0, objectIdx = 0;
 
@@ -113,39 +92,22 @@ int main(void)
   iterConfig->levelSetBandSize = 8;
   iterConfig->iterObjectIds[viewIdx][objectIdx] = 0;
   iterConfig->iterViewCount = 1;
-  iterConfig->iterCount = 30;
+  iterConfig->iterCount = 1;
 
   //step size per object and view
-//  objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.2f, 0.5f, 0.5f, 10.0f);
-  objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.0002f, 0.00005f, 0.00005f, 0.00005f);
+  objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.2f, 0.5f, 0.5f, 10.0f);
 
-//   for (int i = 0 ; i<180; i++)
-//  {
   //initial pose per object and view
   // Notice the input pose here is angle, not radians for the rotation part
-  VFLOAT *rot_mat;
-  rot_mat =(VFLOAT [9]) {0.0786354f,0.996113f,-0.0396911f,0.486207f,-0.0730794f,-0.870782f,-0.870298f,0.0491762f,-0.490064f};
-//rot_mat =(VFLOAT [9]) {0.0802093f,0.498299f,-0.863287f,0.995899f,-0.0764181f,0.0484211f,-0.0418426f,-0.863631f,-0.502385f};
-    objects[objectIdx]->initialPose[viewIdx]->SetFrom(
-                0.055065f, 0.112744f, 0.556275f, rot_mat);
-//objects[objectIdx]->initialPose[viewIdx]->SetFrom(
-//            0.0567572f, 0.088323f, 0.585495f, rot_mat);
-//    Pose from PnP :
-//     0.0802093   0.995899 -0.0418426  0.0567572
-//      0.498299 -0.0764181  -0.863631   0.108323
-//     -0.863287  0.0484211  -0.502385   0.585495
-//             0          0          0          1
-//    Roll: 3.04551 Pitch: -1.04175 Yaw: -1.4112
-//    Roll: 174.495 Pitch: -59.6877 Yaw: -80.8558
-//    Roll: -2.09766 Pitch: -0.0418548 Yaw: -1.49043
-//    Roll: -120.187 Pitch: -2.3981 Yaw: -85.3954
+  //  objects[objectIdx]->initialPose[viewIdx]->SetFrom(
+  //        -1.98f, -2.90f, 37.47f, -40.90f, -207.77f, 27.48f);
 
-//   for blue car demo
-//    objects[objectIdx]->initialPose[viewIdx]->SetFrom( -3.0f,-4.5f,28.f, -220.90f, -207.77f, 87.48f);
+  // for blue car demo
+  //  objects[objectIdx]->initialPose[viewIdx]->SetFrom( -3.0f,-4.5f,28.f, -220.90f, -207.77f, 87.48f);
 
-//  // for red can demo
-//  objects[objectIdx]->initialPose[viewIdx]->SetFrom(
-//        1.0f, 3.0f, 30.f, 180.f, 80.f, 60.f);
+  // for red can demo
+  objects[objectIdx]->initialPose[viewIdx]->SetFrom(
+        1.0f, 3.0f, 30.f, 180.f, 80.f, 60.f);
 
   //primary initilisation
   OptimisationEngine::Instance()->Initialise(width, height);
@@ -160,38 +122,38 @@ int main(void)
         objects[objectIdx], views[viewIdx],
         objects[objectIdx]->initialPose[viewIdx]);
 
-  cv::Mat InitMat(height,width,CV_8UC4, ResultImage->pixels);
-  imshow("initial pose", InitMat);
-//  }
+  cv::Mat ResultMat(height,width,CV_8UC4, ResultImage->pixels);
+  cv::imshow("initial pose", ResultMat);
+  cv::waitKey(1000);
 
   std::cout<<"[App] Finish Rendered object initial pose."<<std::endl;
 
-//  for (i=3; i<4; i++)
-//  {
-//    switch (i)
-//    {
-//    case 0:
+  for (i=0; i<4; i++)
+  {
+    switch (i)
+    {
+    case 0:
       iterConfig->useCUDAEF = true;
       iterConfig->useCUDARender = true;
-//      break;
-//    case 1:
-//      iterConfig->useCUDAEF = false;
-//      iterConfig->useCUDARender = true;
-//      break;
-//    case 2:
-//      iterConfig->useCUDAEF = true;
-//      iterConfig->useCUDARender = false;
-//      break;
-//    case 3:
-//      iterConfig->useCUDAEF = false;
-//      iterConfig->useCUDARender = false;
-//      break;
-//    }
+      break;
+    case 1:
+      iterConfig->useCUDAEF = false;
+      iterConfig->useCUDARender = true;
+      break;
+    case 2:
+      iterConfig->useCUDAEF = true;
+      iterConfig->useCUDARender = false;
+      break;
+    case 3:
+      iterConfig->useCUDAEF = false;
+      iterConfig->useCUDARender = false;
+      break;
+    }
 
     printf("======= mode: useCUDAAEF: %d, use CUDARender %d ========;\n",
            iterConfig->useCUDAEF, iterConfig->useCUDARender);
 
-    sprintf(str, "/home/alejandro/workspace/PWP3D/Files/Results/result%04d.png", i);
+    sprintf(str, "/Users/luma/Code/Luma/PWP3D/Files/Results/result%04d.png", i);
 
     //main processing
     t.restart();
@@ -204,12 +166,12 @@ int main(void)
           objects[objectIdx], views[viewIdx], objects[objectIdx]->pose[viewIdx]);
 
     //result save to file
-//    ImageUtils::Instance()->SaveImageToFile(ResultImage, str);
+    //    ImageUtils::Instance()->SaveImageToFile(result, str);
     cv::Mat ResultMat(height,width,CV_8UC4, ResultImage->pixels);
-    imshow("result", ResultMat);
-//    cv::waitKey(200);
+    cv::imshow("result", ResultMat);
+    cv::waitKey(2000);
 
-    printf("final pose result %f, %f, %f\n%f, %f, %f, %f\n\n",
+    printf("final pose result %f %f %f %f %f %f %f\n\n",
            objects[objectIdx]->pose[viewIdx]->translation->x,
            objects[objectIdx]->pose[viewIdx]->translation->y,
            objects[objectIdx]->pose[viewIdx]->translation->z,
@@ -217,10 +179,10 @@ int main(void)
            objects[objectIdx]->pose[viewIdx]->rotation->vector4d.y,
            objects[objectIdx]->pose[viewIdx]->rotation->vector4d.z,
            objects[objectIdx]->pose[viewIdx]->rotation->vector4d.w);
-//  }
+  }
 
   //posteriors plot
-  sprintf(str, "/home/alejandro/workspace/PWP3D/Files/Results/posteriors.png");
+  sprintf(str, "/Users/luma/Code/Luma/PWP3D/Files/Results/posteriors.png");
   VisualisationEngine::Instance()->GetImage(
         ResultImage, GETIMAGE_POSTERIORS,
         objects[objectIdx], views[viewIdx], objects[objectIdx]->pose[viewIdx]);
@@ -238,7 +200,6 @@ int main(void)
 
   delete ResultImage;
 
-  cv::waitKey();
   std::cout<<"Exit pwp3D app successfully."<<std::endl;
 
   return 0;

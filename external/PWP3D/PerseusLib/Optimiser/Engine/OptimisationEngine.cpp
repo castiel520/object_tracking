@@ -26,7 +26,30 @@ void OptimisationEngine::Initialise(int width, int height)
 
   this->SetPresetStepSizes();
 
-  MathUtils::Instance()->ReadAndAllocateHeaviside(8192, "/home/alejandro/workspace/PWP3D/Files/Others/heaviside.txt");
+  MathUtils::Instance()->ReadAndAllocateHeaviside(8192, "heaviside.txt");
+
+  initialiseCUDA(width, height, MathUtils::Instance()->heavisideFunction, MathUtils::Instance()->heavisideSize);
+
+}
+
+void OptimisationEngine::Initialise(int width, int height, std::string heavy)
+{
+  int i;
+
+  objects = new Object3D**[PERSEUS_MAX_VIEW_COUNT];
+  views = new View3D*[PERSEUS_MAX_VIEW_COUNT];
+  for (i=0; i<PERSEUS_MAX_VIEW_COUNT; i++) objects[i] = new Object3D*[PERSEUS_MAX_OBJECT_COUNT];
+
+  objectCount = new int[PERSEUS_MAX_VIEW_COUNT];
+
+  stepSizes = new StepSize3D*[8];
+  for (i=0; i<8; i++) stepSizes[i] = new StepSize3D();
+
+  energyFunction_standard = new EFStandard();
+
+  this->SetPresetStepSizes();
+
+  MathUtils::Instance()->ReadAndAllocateHeaviside(8192, (char *) heavy.c_str());
 
   initialiseCUDA(width, height, MathUtils::Instance()->heavisideFunction, MathUtils::Instance()->heavisideSize);
 

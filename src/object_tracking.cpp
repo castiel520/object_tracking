@@ -41,8 +41,8 @@
 #include "visualizer.h"
 #include "custom_functions.h"
 #include "background.h"
-#include "../../PWP3D/PerseusLib/PerseusLib.h"
-//#include <PWP3D/PerseusLib.h>
+//#include "../../PWP3D/PerseusLib/PerseusLib.h"
+#include <PerseusLib/PerseusLib.h>
 //#include "../../PWP3D/install/include/PWP3D/PerseusLib.h"
 
 
@@ -144,20 +144,20 @@ std::vector<cv::Point2d>  getPointsForPnP(cv::Mat img, int scale)
 //    points2D.push_back(cv::Point2d(562,294));
     // Start 4675
     scale = 2;
-    points2D.push_back(cv::Point2d(821,413));
-    points2D.push_back(cv::Point2d(881,399));
-    points2D.push_back(cv::Point2d(856,492));
-    points2D.push_back(cv::Point2d(793,503));
-    points2D.push_back(cv::Point2d(702,291));
-    points2D.push_back(cv::Point2d(749,284));
+//     points2D.push_back(cv::Point2d(821,413));
+//     points2D.push_back(cv::Point2d(881,399));
+//     points2D.push_back(cv::Point2d(856,492));
+//     points2D.push_back(cv::Point2d(793,503));
+//     points2D.push_back(cv::Point2d(702,291));
+//     points2D.push_back(cv::Point2d(749,284));
 //    // Start 18010
 //    scale = 2;
-//    points2D.push_back(cv::Point2d(438,400));
-//    points2D.push_back(cv::Point2d(444,362));
-//    points2D.push_back(cv::Point2d(452,452));
-//    points2D.push_back(cv::Point2d(447,496));
-//    points2D.push_back(cv::Point2d(199,398));
-//    points2D.push_back(cv::Point2d(228,357));
+   points2D.push_back(cv::Point2d(438,400));
+   points2D.push_back(cv::Point2d(444,362));
+   points2D.push_back(cv::Point2d(452,452));
+   points2D.push_back(cv::Point2d(447,496));
+   points2D.push_back(cv::Point2d(199,398));
+   points2D.push_back(cv::Point2d(228,357));
 
     for (int i = 0; i < 6; i++)
         points2D[i] *= scale;//scaling_factor;
@@ -317,6 +317,8 @@ int main(int argc, char **argv)
         std::cout << "-th2      canny_threshold2" << std::endl;
         std::cout << "-bg       background_image" << std::endl;
         std::cout << "-scale    scaling_factor" << std::endl;
+        std::cout << "-heavy    heaviside file" << std::endl;
+
         return 0;
     }
 
@@ -367,12 +369,15 @@ int main(int argc, char **argv)
 
     // Load background
     std::string backgroundFile = "/home/alejandro/Models/background.jpg";
-    pcl::console::parse_argument(argc, argv, "-bg", backgroundFile);;
+    pcl::console::parse_argument(argc, argv, "-bg", backgroundFile);
     cv::Mat img_bg = cv::imread(backgroundFile);
 
     // Load scaling factor
     int scaling_factor = 2;
     pcl::console::parse_argument(argc,argv,"-scale", scaling_factor);
+
+    std::string heavy_name = "heaviside.txt";
+    pcl::console::parse_argument(argc, argv, "-heavy", heavy_name);
 
     /*************************************************************
      *********************   INITIAL IMAGE   *********************
@@ -481,6 +486,12 @@ int main(int argc, char **argv)
     cv::Mat hand_mask(height,width,CV_8U,cv::Scalar(255));
     cv::Mat non_hand_mask(height,width,CV_8U,cv::Scalar(255));
     hsSegment(img_color, 0.1, 142, 127, 0.9,0.1,hand_mask,non_hand_mask);
+    
+//     cv::imshow("MASK", hand_mask);
+//     cv::imshow("MASK1", non_hand_mask);
+//     cvWaitKey(0);
+//     
+    
     cv::Mat hand_mask_scaled;
     cv::resize(hand_mask,hand_mask_scaled,size);
 
@@ -550,8 +561,9 @@ int main(int argc, char **argv)
     iterConfig->useCUDAEF = true;
     iterConfig->useCUDARender = true;
 
+
 //    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.2f, 0.01f, 0.01f, 0.01f);
-    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.05f, 0.0005f, 0.0005f, 0.0005f);
+    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.005f, 0.005f, 0.005f, 0.005f);
 //    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.01f, 0.0001f, 0.0001f, 0.0001f);
 //    float step_size = 10/((K_color.at<float>(0,0)+K_color.at<float>(1,1))/2);
 //    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.5f, step_size,step_size, step_size);
@@ -560,12 +572,25 @@ int main(int argc, char **argv)
      *********************   INITIALIZE PWP3D POSE  *********************
      ********************************************************************/
 
-    VFLOAT *rot;
-    rot =(VFLOAT [9]) {M(0,0),M(0,1),M(0,2),M(1,0),M(1,1),M(1,2),M(2,0),M(2,1),M(2,2)};
+      VFLOAT rot[9];  
+
+    rot[0] = M(0,0);
+    rot[1] = M(0,1);
+    rot[2] = M(0,2);
+    rot[3] = M(1,0);
+    rot[4] = M(1,1);
+    rot[5] = M(1,2);
+    rot[6] = M(2,0);
+    rot[7] = M(2,1);
+    rot[8] = M(2,2);
+
     objects[objectIdx]->initialPose[viewIdx]->SetFrom(
             M(0,3), M(1,3), M(2,3), rot);
+    
+    
 
-    OptimisationEngine::Instance()->Initialise(width_scaled, height_scaled);
+    OptimisationEngine::Instance()->Initialise(width_scaled, height_scaled, heavy_name);
+
     OptimisationEngine::Instance()->RegisterViewImage(views[viewIdx], camera);
 
 //    //result plot
@@ -600,17 +625,16 @@ int main(int argc, char **argv)
         cv::resize(img_color,img_color_scaled,size);
         cv::Mat img_edges = canny(img_color,th1,th2);
 
-        cv::split(img_color_scaled, rgbChannels);
-        cv::Mat alpha_mask(height_scaled,width_scaled,CV_8U,cv::Scalar(255));
-        rgbChannels.push_back(alpha_mask);
-        cv::merge(rgbChannels, img_color4C);
-        ImageUtils::Instance()->LoadImageFromCVMat(camera, img_color4C);
+
 
         hsSegment(img_color, 0.1, 142, 127, 0.9,0.1,hand_mask,non_hand_mask);
         cv::resize(hand_mask,hand_mask_scaled,size);
         hsSegment(img_color, 0.1, img_bg, 0.3, 0.7,mask_bg, mask_fg);
         cv::resize(mask_bg,mask_bg_scaled,size);
         cv::resize(mask_fg,mask_fg_scaled,size);
+        
+        
+    
 
 //        cv::Mat target_mask_scaled;
 //        cv::resize(target_mask,target_mask_scaled,size);
@@ -624,12 +648,20 @@ int main(int argc, char **argv)
         // Copy hands and bg to reach PWP3D
 //        cv::Mat img_black(img_color.rows,img_color.cols,CV_8UC3,cv::Scalar(0,0,0));
 //        img_black.copyTo(img_color,overlap_mask_scaled);
-        cv::Mat img_gray(img_color_scaled.rows,img_color_scaled.cols,CV_8UC3,cv::Scalar(0,0,1));
+        cv::Mat img_gray(img_color_scaled.rows,img_color_scaled.cols,CV_8UC3,cv::Scalar(0,0,0));
         img_gray.copyTo(img_color_scaled,hand_mask_scaled);
 //        img_black.copyTo(img_color,hand_mask);
         cv::Mat img_white(img_color_scaled.rows,img_color_scaled.cols,CV_8UC3,cv::Scalar(255,255,255));
         img_white.copyTo(img_color_scaled,mask_bg_scaled);
+        
+        cv::split(img_color_scaled, rgbChannels);
+        cv::Mat alpha_mask(height_scaled,width_scaled,CV_8U,cv::Scalar(255));
+        rgbChannels.push_back(alpha_mask);
+        cv::merge(rgbChannels, img_color4C);
+        ImageUtils::Instance()->LoadImageFromCVMat(camera, img_color4C);
 
+//         cv::imshow("hands", img_color_scaled);
+//         cvWaitKey(0);
 
 
 
@@ -662,18 +694,21 @@ int main(int argc, char **argv)
         int j = 0;
         bool loop = false;
         timer.restart();
+        
+        int iterations = 20;
 
-        while (j<50)
+        while (j<iterations)
         {
-            OptimisationEngine::Instance()->Minimise(objects, views, iterConfig);
 
+            OptimisationEngine::Instance()->Minimise(objects, views, iterConfig);
             objects[objectIdx]->pose[viewIdx]->CopyInto(objects[objectIdx]->initialPose[viewIdx]);
+            
 
             Eigen::Vector4d quat = Eigen::Vector4d(objects[objectIdx]->pose[viewIdx]->rotation->vector4d.x,
                                    objects[objectIdx]->pose[viewIdx]->rotation->vector4d.y,
                                    objects[objectIdx]->pose[viewIdx]->rotation->vector4d.z,
                                    objects[objectIdx]->pose[viewIdx]->rotation->vector4d.w);
-            Eigen::Matrix3d rot_mat = quatToMatrix(quat);
+            Eigen::Matrix3d rot_mat = quatToMatrix(quat); 
             Eigen::Vector3d trans = Eigen::Vector3d(objects[objectIdx]->pose[viewIdx]->translation->x,
                                     objects[objectIdx]->pose[viewIdx]->translation->y,
                                     objects[objectIdx]->pose[viewIdx]->translation->z);
@@ -694,11 +729,11 @@ int main(int argc, char **argv)
                 break;
             else
             {
-                if ((j==49) && (loop == false))
+                if ((j==iterations-1) && (loop == false))
                 {
 //                    std::cout << i << std::endl;
 
-                    objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.01f, 0.001f, 0.001f, 0.001f);
+                  //  objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.01f, 0.001f, 0.001f, 0.001f);
                     j = 0;
                     loop = true;
                 }
@@ -714,38 +749,41 @@ int main(int argc, char **argv)
             prev_M = M;
 
             j++;
+            
+           
+            
         }
         std::cout << timer.elapsed() << std::endl;
 
-        objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.05f, 0.0005f, 0.0005f, 0.0005f);
+       // objects[objectIdx]->stepSize[viewIdx] = new StepSize3D(0.05f, 0.0005f, 0.0005f, 0.0005f);
 
 //        std::cout << i << std::endl;
 
-        generateModelImagesFromPose(renderer, M, img_depth_model,mask_out);
-        cv::resize(mask_out,mask_out_scaled,size);
-        computeEdgesFromNormalMap(img_depth_model, model_normals,img_model_edges);
-
-//        pcl_viewer.cloud_viewer_.removeShape("model");
-//        pcl_viewer.snapPLYmodel(plyModel,M2, "model");
-
-        img_color.copyTo(img_contours);//,img_edges);
-        cv::Mat img_blue(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(255,0,0));
-        img_blue.copyTo(img_contours,img_edges);
-        cv::Mat img_yellow(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(0,255,255));
-        img_yellow.copyTo( img_contours, img_model_edges);
-//        cv::Mat img_orange(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(0,100,255));
-//        img_orange.copyTo( img_contours, img_model_edges_initial);
-        cv::Mat img_green(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(0,255,0));
-        cv::Mat overlap;
-        cv::bitwise_and(img_model_edges,img_edges,overlap);
-        cv::dilate(overlap,overlap,element);
-        img_green.copyTo( img_contours, overlap);
-//        cv::Mat img_purple(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(255,0,180));
-//        img_purple.copyTo(img_contours,mask_bg);
-
-
-
-        imshow("edges superposed", img_contours);
+//         generateModelImagesFromPose(renderer, M, img_depth_model,mask_out);
+//         cv::resize(mask_out,mask_out_scaled,size);
+//         computeEdgesFromNormalMap(img_depth_model, model_normals,img_model_edges);
+// 
+// //        pcl_viewer.cloud_viewer_.removeShape("model");
+// //        pcl_viewer.snapPLYmodel(plyModel,M2, "model");
+// 
+//         img_color.copyTo(img_contours);//,img_edges);
+//         cv::Mat img_blue(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(255,0,0));
+//         img_blue.copyTo(img_contours,img_edges);
+//         cv::Mat img_yellow(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(0,255,255));
+//         img_yellow.copyTo( img_contours, img_model_edges);
+// //        cv::Mat img_orange(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(0,100,255));
+// //        img_orange.copyTo( img_contours, img_model_edges_initial);
+//         cv::Mat img_green(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(0,255,0));
+//         cv::Mat overlap;
+//         cv::bitwise_and(img_model_edges,img_edges,overlap);
+//         cv::dilate(overlap,overlap,element);
+//         img_green.copyTo( img_contours, overlap);
+// //        cv::Mat img_purple(img_model_edges.rows,img_model_edges.cols,CV_8UC3,cv::Scalar(255,0,180));
+// //        img_purple.copyTo(img_contours,mask_bg);
+// 
+// 
+// 
+//         imshow("edges superposed", img_contours);
 
 
 //        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);

@@ -13,25 +13,25 @@ find_package(VTK REQUIRED)
 
 add_definitions(-std=c++11)
 #3D renderer
-include_directories(/home/lpuig/PWP3D/Alejandro/object_tracking/external/ork_renderer/include/ /home/lpuig/PWP3D/Alejandro/object_tracking/external/ork_renderer/src include  /home/lpuig/PWP3D/Alejandro/PWP3D/install/include )
+include_directories(/home/lpuig/PWP3D/Alejandro/object_tracking/external/ork_renderer/include/ /home/lpuig/PWP3D/Alejandro/object_tracking/external/ork_renderer/src include   )
 link_directories( ${PCL_LIBRARY_DIRS} /home/lpuig/PWP3D/Alejandro/object_tracking/external/ork_renderer/build/devel/lib)
 
-find_package( PWP3D REQUIRED)
-include_directories( ${PWP3D_INCLUDE_DIRS} /home/lpuig/PWP3D/Alejandro/PWP3D/installed/include)
-MESSAGE( "PWP3D_INCLUDE_DIRS: " ${PWP3D_INCLUDE_DIRS} )
+find_package( PWP3D REQUIRED )
+include_directories( ${PWP3D_INCLUDE_DIRS} /home/lpuig/PWP3D/Alejandro/object_tracking/external/PWP3D/install/include)
+MESSAGE( "PWP3D_INCLUDE_DIRS: " ${PWP3D_INCLUDE_DIRS})
 MESSAGE( "PWP3D_LIBRARIES: " ${PWP3D_LIBRARIES} )
 
-add_executable(rendermodel src/rendermodel.cpp src/image_cropper.cpp src/obj_recognition.cpp)
-target_link_libraries(rendermodel ${PCL_LIBRARIES} object_recognition_renderer_3d glut ${OpenCV_LIBRARIES})
+#add_executable(rendermodel src/rendermodel.cpp src/image_cropper.cpp src/obj_recognition.cpp)
+#target_link_libraries(rendermodel ${PCL_LIBRARIES} object_recognition_renderer_3d glut ${OpenCV_LIBRARIES})
 
-add_executable(mi_rendermodel 
-                src/mi_rendermodel.cpp 
-                src/image_cropper.cpp 
-                src/obj_recognition.cpp 
-                src/visualizer.cpp
-                src/custom_functions.cpp
-)
-target_link_libraries(mi_rendermodel ${PCL_LIBRARIES} object_recognition_renderer_3d ${OpenCV_LIBRARIES})
+#add_executable(mi_rendermodel 
+#                src/mi_rendermodel.cpp 
+#                src/image_cropper.cpp 
+#                src/obj_recognition.cpp 
+#                src/visualizer.cpp
+#                src/custom_functions.cpp
+#)
+#target_link_libraries(mi_rendermodel ${PCL_LIBRARIES} object_recognition_renderer_3d ${OpenCV_LIBRARIES})
 
 add_executable(object_tracking 
            src/object_tracking.cpp 

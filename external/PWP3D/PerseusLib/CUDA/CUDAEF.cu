@@ -175,179 +175,174 @@ __global__ void processEFD1_global(
 
         if (n_hidx >= 0 && n_hidx < 8192)
         {
-          f_heaviside = tex1D(g_texHeaviside, n_hidx);
+            f_heaviside = tex1D(g_texHeaviside, n_hidx);
 
-          imagePixel = imageRegistered[offset];
-          n_greyPixel = int(float(imagePixel.x) * 0.3f + float(imagePixel.y) * 0.59f + float(imagePixel.z) * 0.11f);
+            imagePixel = imageRegistered[offset];
+            n_greyPixel = int(float(imagePixel.x) * 0.3f + float(imagePixel.y) * 0.59f + float(imagePixel.z) * 0.11f);
 
-          if (!(n_greyPixel == 255))
-          {
-          n_currentHistogram = 0;
-          if (n_greyPixel <= 0.3)
-          {
-                f_pYB = 0.01; f_pYF = 0.01;
-//                if (n_greyPixel == 0)
-//                {
-//                    f_pYB = 0.5; f_pYF = 0.5;
-//                }
-          }
-          else
-          {
-              if (n_greyPixel == 255)
-              {
-                 f_pYB = 1.0; f_pYF = 0.0;
-              }
-              else
-              {
-                  if (n_greyPixel < 128) n_currentHistogram = 3;
-                  else if (n_greyPixel < 192) n_currentHistogram = 2;
-                  else if (n_greyPixel < 224) n_currentHistogram = 1;
+        
+            n_currentHistogram = 0;
+            if (n_greyPixel==0)
+            {
+                f_pYB = 0.005; f_pYF = 0.005;	
+            }
+            else
+            {
+                if (n_greyPixel == 255)
+                {
+                    f_pYB = 1.0; f_pYF = 0.000001;
+                }
+                else
+                {
+                    if (n_greyPixel < 128) n_currentHistogram = 3;
+                    else if (n_greyPixel < 192) n_currentHistogram = 2;
+                    else if (n_greyPixel < 224) n_currentHistogram = 1;
 
 
 
-                  //currentHistogram = 2;
-                  imagePixel.x = (imagePixel.x >> histFactors[n_currentHistogram]) & (histNoBins[n_currentHistogram] - 1);
-                  imagePixel.y = (imagePixel.y >> histFactors[n_currentHistogram]) & (histNoBins[n_currentHistogram] - 1);
-                  imagePixel.z = (imagePixel.z >> histFactors[n_currentHistogram]) & (histNoBins[n_currentHistogram] - 1);
-                  n_pidx = (imagePixel.x + imagePixel.y * histNoBins[n_currentHistogram]) * histNoBins[n_currentHistogram] + imagePixel.z;
+                    //currentHistogram = 2;
+                    imagePixel.x = (imagePixel.x >> histFactors[n_currentHistogram]) & (histNoBins[n_currentHistogram] - 1);
+                    imagePixel.y = (imagePixel.y >> histFactors[n_currentHistogram]) & (histNoBins[n_currentHistogram] - 1);
+                    imagePixel.z = (imagePixel.z >> histFactors[n_currentHistogram]) & (histNoBins[n_currentHistogram] - 1);
+                    n_pidx = (imagePixel.x + imagePixel.y * histNoBins[n_currentHistogram]) * histNoBins[n_currentHistogram] + imagePixel.z;
 
-                  histogramPixel = histogram[histOffsets[n_currentHistogram] + n_pidx];
+                    histogramPixel = histogram[histOffsets[n_currentHistogram] + n_pidx];
 
-                  f_pYF = histogramPixel.x + 0.0000001f; f_pYB = histogramPixel.y + 0.0000001f;
-              }
-          }
+                    f_pYF = histogramPixel.x + 0.0000001f; f_pYB = histogramPixel.y + 0.0000001f;
+                }
+            }
 
-          f_dirac = (1.0f / float(PI)) * (1.0f / (f_dtIdx * f_dtIdx + 1.0f) + float(1e-3));
-          f_fPPGeneric = f_dirac * (f_pYF - f_pYB) / (f_heaviside * (f_pYF - f_pYB) + f_pYB);
+      f_dirac = (1.0f / float(PI)) * (1.0f / (f_dtIdx * f_dtIdx + 1.0f) + float(1e-3));
+      f_fPPGeneric = f_dirac * (f_pYF - f_pYB) / (f_heaviside * (f_pYF - f_pYB) + f_pYB);
 
-          f_xProjected[0] = 2.0f * (n_icX + minX - (float) viewTransform[0]) / (float) viewTransform[2] - 1.0f;
-          f_xProjected[1] = 2.0f * (n_icY + minY - (float) viewTransform[1]) / (float) viewTransform[3] - 1.0f;
-          f_xProjected[2] = 2.0f * ((float)imageZBuffer[n_icZ] / (float)MAX_INT) - 1.0f;
-          f_xProjected[3] = 1.0f;
+      f_xProjected[0] = 2.0f * (n_icX + minX - (float) viewTransform[0]) / (float) viewTransform[2] - 1.0f;
+      f_xProjected[1] = 2.0f * (n_icY + minY - (float) viewTransform[1]) / (float) viewTransform[3] - 1.0f;
+      f_xProjected[2] = 2.0f * ((float)imageZBuffer[n_icZ] / (float)MAX_INT) - 1.0f;
+      f_xProjected[3] = 1.0f;
 
-          f_xUnprojected[0] = invP[0] * f_xProjected[0] + invP[4] * f_xProjected[1] + invP[8] * f_xProjected[2] + invP[12] * f_xProjected[3];
-          f_xUnprojected[1] = invP[1] * f_xProjected[0] + invP[5] * f_xProjected[1] + invP[9] * f_xProjected[2] + invP[13] * f_xProjected[3];
-          f_xUnprojected[2] = invP[2] * f_xProjected[0] + invP[6] * f_xProjected[1] + invP[10] * f_xProjected[2] + invP[14] * f_xProjected[3];
-          f_xUnprojected[3] = invP[3] * f_xProjected[0] + invP[7] * f_xProjected[1] + invP[11] * f_xProjected[2] + invP[15] * f_xProjected[3];
-          f_norm = 1.0f/f_xUnprojected[3];
+      f_xUnprojected[0] = invP[0] * f_xProjected[0] + invP[4] * f_xProjected[1] + invP[8] * f_xProjected[2] + invP[12] * f_xProjected[3];
+      f_xUnprojected[1] = invP[1] * f_xProjected[0] + invP[5] * f_xProjected[1] + invP[9] * f_xProjected[2] + invP[13] * f_xProjected[3];
+      f_xUnprojected[2] = invP[2] * f_xProjected[0] + invP[6] * f_xProjected[1] + invP[10] * f_xProjected[2] + invP[14] * f_xProjected[3];
+      f_xUnprojected[3] = invP[3] * f_xProjected[0] + invP[7] * f_xProjected[1] + invP[11] * f_xProjected[2] + invP[15] * f_xProjected[3];
+      f_norm = 1.0f/f_xUnprojected[3];
 
-          f_xUnprojected[0] *= f_norm;
-          f_xUnprojected[1] *= f_norm;
-          f_xUnprojected[2] *= f_norm;
-          f_xUnprojected[3] *= f_norm;
+      f_xUnprojected[0] *= f_norm;
+      f_xUnprojected[1] *= f_norm;
+      f_xUnprojected[2] *= f_norm;
+      f_xUnprojected[3] *= f_norm;
 
-          f_xUnrotated[0] = invPM[0] * f_xProjected[0] + invPM[4] * f_xProjected[1] + invPM[8] * f_xProjected[2] + invPM[12] * f_xProjected[3];
-          f_xUnrotated[1] = invPM[1] * f_xProjected[0] + invPM[5] * f_xProjected[1] + invPM[9] * f_xProjected[2] + invPM[13] * f_xProjected[3];
-          f_xUnrotated[2] = invPM[2] * f_xProjected[0] + invPM[6] * f_xProjected[1] + invPM[10] * f_xProjected[2] + invPM[14] * f_xProjected[3];
-          f_xUnrotated[3] = invPM[3] * f_xProjected[0] + invPM[7] * f_xProjected[1] + invPM[11] * f_xProjected[2] + invPM[15] * f_xProjected[3];
+      f_xUnrotated[0] = invPM[0] * f_xProjected[0] + invPM[4] * f_xProjected[1] + invPM[8] * f_xProjected[2] + invPM[12] * f_xProjected[3];
+      f_xUnrotated[1] = invPM[1] * f_xProjected[0] + invPM[5] * f_xProjected[1] + invPM[9] * f_xProjected[2] + invPM[13] * f_xProjected[3];
+      f_xUnrotated[2] = invPM[2] * f_xProjected[0] + invPM[6] * f_xProjected[1] + invPM[10] * f_xProjected[2] + invPM[14] * f_xProjected[3];
+      f_xUnrotated[3] = invPM[3] * f_xProjected[0] + invPM[7] * f_xProjected[1] + invPM[11] * f_xProjected[2] + invPM[15] * f_xProjected[3];
 
-          f_norm = 1.0f/f_xUnrotated[3];
-          f_xUnrotated[0] *= f_norm;
-          f_xUnrotated[1] *= f_norm;
-          f_xUnrotated[2] *= f_norm;
-          f_xUnrotated[3] *= f_norm;
+      f_norm = 1.0f/f_xUnrotated[3];
+      f_xUnrotated[0] *= f_norm;
+      f_xUnrotated[1] *= f_norm;
+      f_xUnrotated[2] *= f_norm;
+      f_xUnrotated[3] *= f_norm;
 
-          f_otherInfo[0] = projectionParams[0] * dtDX[offset]; f_otherInfo[1] = projectionParams[1] * dtDY[offset];
+      f_otherInfo[0] = projectionParams[0] * dtDX[offset]; f_otherInfo[1] = projectionParams[1] * dtDY[offset];
 
-          d_precalcXY = f_xUnprojected[2] * f_xUnprojected[2];
+      d_precalcXY = f_xUnprojected[2] * f_xUnprojected[2];
 
-          dfPPTranslation.x = -f_otherInfo[0] / f_xUnprojected[2];
-          dfPPTranslation.y = -f_otherInfo[1] / f_xUnprojected[2];
-          dfPPTranslation.z = (f_otherInfo[0] * f_xUnprojected[0] + f_otherInfo[1] * f_xUnprojected[1]) / d_precalcXY;
+      dfPPTranslation.x = -f_otherInfo[0] / f_xUnprojected[2];
+      dfPPTranslation.y = -f_otherInfo[1] / f_xUnprojected[2];
+      dfPPTranslation.z = (f_otherInfo[0] * f_xUnprojected[0] + f_otherInfo[1] * f_xUnprojected[1]) / d_precalcXY;
 
-          f_precalcX = -f_otherInfo[0] / d_precalcXY; d_precalcY = -f_otherInfo[1] / d_precalcXY;
+      f_precalcX = -f_otherInfo[0] / d_precalcXY; d_precalcY = -f_otherInfo[1] / d_precalcXY;
 
-          dfPPRotation.x =
-              f_precalcX * (f_xUnprojected[2] * (q[1]*f_xUnrotated[1] + q[2]*f_xUnrotated[2]) -
-              f_xUnprojected[0] * (q[2]*f_xUnrotated[0] + q[3]*f_xUnrotated[1] - 2*q[0]*f_xUnrotated[2])) +
-              d_precalcY * (f_xUnprojected[2] * (q[1]*f_xUnrotated[0] - 2*q[0]*f_xUnrotated[1] - q[3]*f_xUnrotated[2]) -
-              f_xUnprojected[1] * (q[2]*f_xUnrotated[0] + q[3]*f_xUnrotated[1] - 2*q[0]*f_xUnrotated[2]));
+      dfPPRotation.x =
+          f_precalcX * (f_xUnprojected[2] * (q[1]*f_xUnrotated[1] + q[2]*f_xUnrotated[2]) -
+          f_xUnprojected[0] * (q[2]*f_xUnrotated[0] + q[3]*f_xUnrotated[1] - 2*q[0]*f_xUnrotated[2])) +
+          d_precalcY * (f_xUnprojected[2] * (q[1]*f_xUnrotated[0] - 2*q[0]*f_xUnrotated[1] - q[3]*f_xUnrotated[2]) -
+          f_xUnprojected[1] * (q[2]*f_xUnrotated[0] + q[3]*f_xUnrotated[1] - 2*q[0]*f_xUnrotated[2]));
 
-          dfPPRotation.y =
-              f_precalcX * (f_xUnprojected[2] * (q[0]*f_xUnrotated[1] - 2*q[1]*f_xUnrotated[0] + q[3]*f_xUnrotated[2]) -
-              f_xUnprojected[0] * (q[2]*f_xUnrotated[1] - q[3]*f_xUnrotated[0] - 2*q[1]*f_xUnrotated[2])) +
-              d_precalcY * (f_xUnprojected[2] * (q[0]*f_xUnrotated[0] + q[2]*f_xUnrotated[2]) -
-              f_xUnprojected[1] * (q[2]*f_xUnrotated[1] - q[3]*f_xUnrotated[0] - 2*q[1]*f_xUnrotated[2]));
+      dfPPRotation.y =
+          f_precalcX * (f_xUnprojected[2] * (q[0]*f_xUnrotated[1] - 2*q[1]*f_xUnrotated[0] + q[3]*f_xUnrotated[2]) -
+          f_xUnprojected[0] * (q[2]*f_xUnrotated[1] - q[3]*f_xUnrotated[0] - 2*q[1]*f_xUnrotated[2])) +
+          d_precalcY * (f_xUnprojected[2] * (q[0]*f_xUnrotated[0] + q[2]*f_xUnrotated[2]) -
+          f_xUnprojected[1] * (q[2]*f_xUnrotated[1] - q[3]*f_xUnrotated[0] - 2*q[1]*f_xUnrotated[2]));
 
-          dfPPRotation.z =
-              f_precalcX * (f_xUnprojected[2] * (q[0]*f_xUnrotated[2] - q[3]*f_xUnrotated[1] - 2*q[2]*f_xUnrotated[0]) -
-              f_xUnprojected[0] * (q[0]*f_xUnrotated[0] + q[1]*f_xUnrotated[1])) +
-              d_precalcY * (f_xUnprojected[2] * (q[3]*f_xUnrotated[0] - 2*q[2]*f_xUnrotated[1] + q[1]*f_xUnrotated[2]) -
-              f_xUnprojected[1] * (q[0]*f_xUnrotated[0] + q[1]*f_xUnrotated[1]));
+      dfPPRotation.z =
+          f_precalcX * (f_xUnprojected[2] * (q[0]*f_xUnrotated[2] - q[3]*f_xUnrotated[1] - 2*q[2]*f_xUnrotated[0]) -
+          f_xUnprojected[0] * (q[0]*f_xUnrotated[0] + q[1]*f_xUnrotated[1])) +
+          d_precalcY * (f_xUnprojected[2] * (q[3]*f_xUnrotated[0] - 2*q[2]*f_xUnrotated[1] + q[1]*f_xUnrotated[2]) -
+          f_xUnprojected[1] * (q[0]*f_xUnrotated[0] + q[1]*f_xUnrotated[1]));
 
-          dfPPRotation.w =
-              f_precalcX * (f_xUnprojected[2] * (q[1]*f_xUnrotated[2] - q[2]*f_xUnrotated[1]) -
-              f_xUnprojected[0] * (q[0]*f_xUnrotated[1] - q[1]*f_xUnrotated[0])) +
-              d_precalcY * (f_xUnprojected[2] * (q[2]*f_xUnrotated[0] - q[0]*f_xUnrotated[2]) -
-              f_xUnprojected[1] * (q[0]*f_xUnrotated[1] - q[1]*f_xUnrotated[0]));
+      dfPPRotation.w =
+          f_precalcX * (f_xUnprojected[2] * (q[1]*f_xUnrotated[2] - q[2]*f_xUnrotated[1]) -
+          f_xUnprojected[0] * (q[0]*f_xUnrotated[1] - q[1]*f_xUnrotated[0])) +
+          d_precalcY * (f_xUnprojected[2] * (q[2]*f_xUnrotated[0] - q[0]*f_xUnrotated[2]) -
+          f_xUnprojected[1] * (q[0]*f_xUnrotated[1] - q[1]*f_xUnrotated[0]));
 
-          f_xProjected[0] = 2.0f * (n_icX + minX - (float) viewTransform[0]) / (float) viewTransform[2] - 1.0f;
-          f_xProjected[1] = 2.0f * (n_icY + minY - (float) viewTransform[1]) / (float) viewTransform[3] - 1.0f;
-          f_xProjected[2] = 2.0f * ((float)imageZBufferInverse[n_icZ] / (float)MAX_INT) - 1.0f;
-          f_xProjected[3] = 1.0f;
+      f_xProjected[0] = 2.0f * (n_icX + minX - (float) viewTransform[0]) / (float) viewTransform[2] - 1.0f;
+      f_xProjected[1] = 2.0f * (n_icY + minY - (float) viewTransform[1]) / (float) viewTransform[3] - 1.0f;
+      f_xProjected[2] = 2.0f * ((float)imageZBufferInverse[n_icZ] / (float)MAX_INT) - 1.0f;
+      f_xProjected[3] = 1.0f;
 
-          f_xUnprojected[0] = invP[0] * f_xProjected[0] + invP[4] * f_xProjected[1] + invP[8] * f_xProjected[2] + invP[12] * f_xProjected[3];
-          f_xUnprojected[1] = invP[1] * f_xProjected[0] + invP[5] * f_xProjected[1] + invP[9] * f_xProjected[2] + invP[13] * f_xProjected[3];
-          f_xUnprojected[2] = invP[2] * f_xProjected[0] + invP[6] * f_xProjected[1] + invP[10] * f_xProjected[2] + invP[14] * f_xProjected[3];
-          f_xUnprojected[3] = invP[3] * f_xProjected[0] + invP[7] * f_xProjected[1] + invP[11] * f_xProjected[2] + invP[15] * f_xProjected[3];
-          f_norm = 1.0f/f_xUnprojected[3]; f_xUnprojected[0] *= f_norm; f_xUnprojected[1] *= f_norm; f_xUnprojected[2] *= f_norm; f_xUnprojected[3] *= f_norm;
+      f_xUnprojected[0] = invP[0] * f_xProjected[0] + invP[4] * f_xProjected[1] + invP[8] * f_xProjected[2] + invP[12] * f_xProjected[3];
+      f_xUnprojected[1] = invP[1] * f_xProjected[0] + invP[5] * f_xProjected[1] + invP[9] * f_xProjected[2] + invP[13] * f_xProjected[3];
+      f_xUnprojected[2] = invP[2] * f_xProjected[0] + invP[6] * f_xProjected[1] + invP[10] * f_xProjected[2] + invP[14] * f_xProjected[3];
+      f_xUnprojected[3] = invP[3] * f_xProjected[0] + invP[7] * f_xProjected[1] + invP[11] * f_xProjected[2] + invP[15] * f_xProjected[3];
+      f_norm = 1.0f/f_xUnprojected[3]; f_xUnprojected[0] *= f_norm; f_xUnprojected[1] *= f_norm; f_xUnprojected[2] *= f_norm; f_xUnprojected[3] *= f_norm;
 
-          f_xUnrotated[0] = invPM[0] * f_xProjected[0] + invPM[4] * f_xProjected[1] + invPM[8] * f_xProjected[2] + invPM[12] * f_xProjected[3];
-          f_xUnrotated[1] = invPM[1] * f_xProjected[0] + invPM[5] * f_xProjected[1] + invPM[9] * f_xProjected[2] + invPM[13] * f_xProjected[3];
-          f_xUnrotated[2] = invPM[2] * f_xProjected[0] + invPM[6] * f_xProjected[1] + invPM[10] * f_xProjected[2] + invPM[14] * f_xProjected[3];
-          f_xUnrotated[3] = invPM[3] * f_xProjected[0] + invPM[7] * f_xProjected[1] + invPM[11] * f_xProjected[2] + invPM[15] * f_xProjected[3];
-          f_norm = 1.0f/f_xUnrotated[3]; f_xUnrotated[0] *= f_norm; f_xUnrotated[1] *= f_norm; f_xUnrotated[2] *= f_norm; f_xUnrotated[3] *= f_norm;
+      f_xUnrotated[0] = invPM[0] * f_xProjected[0] + invPM[4] * f_xProjected[1] + invPM[8] * f_xProjected[2] + invPM[12] * f_xProjected[3];
+      f_xUnrotated[1] = invPM[1] * f_xProjected[0] + invPM[5] * f_xProjected[1] + invPM[9] * f_xProjected[2] + invPM[13] * f_xProjected[3];
+      f_xUnrotated[2] = invPM[2] * f_xProjected[0] + invPM[6] * f_xProjected[1] + invPM[10] * f_xProjected[2] + invPM[14] * f_xProjected[3];
+      f_xUnrotated[3] = invPM[3] * f_xProjected[0] + invPM[7] * f_xProjected[1] + invPM[11] * f_xProjected[2] + invPM[15] * f_xProjected[3];
+      f_norm = 1.0f/f_xUnrotated[3]; f_xUnrotated[0] *= f_norm; f_xUnrotated[1] *= f_norm; f_xUnrotated[2] *= f_norm; f_xUnrotated[3] *= f_norm;
 
-          d_precalcXY = f_xUnprojected[2] * f_xUnprojected[2];
+      d_precalcXY = f_xUnprojected[2] * f_xUnprojected[2];
 
-          dfPPTranslation.x += -f_otherInfo[0] / f_xUnprojected[2];
-          dfPPTranslation.y += -f_otherInfo[1] / f_xUnprojected[2];
-          dfPPTranslation.z += (f_otherInfo[0] * f_xUnprojected[0] + f_otherInfo[1] * f_xUnprojected[1]) / d_precalcXY;
+      dfPPTranslation.x += -f_otherInfo[0] / f_xUnprojected[2];
+      dfPPTranslation.y += -f_otherInfo[1] / f_xUnprojected[2];
+      dfPPTranslation.z += (f_otherInfo[0] * f_xUnprojected[0] + f_otherInfo[1] * f_xUnprojected[1]) / d_precalcXY;
 
-          f_precalcX = -f_otherInfo[0] / d_precalcXY; d_precalcY = -f_otherInfo[1] / d_precalcXY;
+      f_precalcX = -f_otherInfo[0] / d_precalcXY; d_precalcY = -f_otherInfo[1] / d_precalcXY;
 
-          dfPPRotation.x +=
-              f_precalcX * (f_xUnprojected[2] * (q[1]*f_xUnrotated[1] + q[2]*f_xUnrotated[2]) -
-              f_xUnprojected[0] * (q[2]*f_xUnrotated[0] + q[3]*f_xUnrotated[1] - 2*q[0]*f_xUnrotated[2])) +
-              d_precalcY * (f_xUnprojected[2] * (q[1]*f_xUnrotated[0] - 2*q[0]*f_xUnrotated[1] - q[3]*f_xUnrotated[2]) -
-              f_xUnprojected[1] * (q[2]*f_xUnrotated[0] + q[3]*f_xUnrotated[1] - 2*q[0]*f_xUnrotated[2]));
+      dfPPRotation.x +=
+          f_precalcX * (f_xUnprojected[2] * (q[1]*f_xUnrotated[1] + q[2]*f_xUnrotated[2]) -
+          f_xUnprojected[0] * (q[2]*f_xUnrotated[0] + q[3]*f_xUnrotated[1] - 2*q[0]*f_xUnrotated[2])) +
+          d_precalcY * (f_xUnprojected[2] * (q[1]*f_xUnrotated[0] - 2*q[0]*f_xUnrotated[1] - q[3]*f_xUnrotated[2]) -
+          f_xUnprojected[1] * (q[2]*f_xUnrotated[0] + q[3]*f_xUnrotated[1] - 2*q[0]*f_xUnrotated[2]));
 
-          dfPPRotation.y +=
-              f_precalcX * (f_xUnprojected[2] * (q[0]*f_xUnrotated[1] - 2*q[1]*f_xUnrotated[0] + q[3]*f_xUnrotated[2]) -
-              f_xUnprojected[0] * (q[2]*f_xUnrotated[1] - q[3]*f_xUnrotated[0] - 2*q[1]*f_xUnrotated[2])) +
-              d_precalcY * (f_xUnprojected[2] * (q[0]*f_xUnrotated[0] + q[2]*f_xUnrotated[2]) -
-              f_xUnprojected[1] * (q[2]*f_xUnrotated[1] - q[3]*f_xUnrotated[0] - 2*q[1]*f_xUnrotated[2]));
+      dfPPRotation.y +=
+          f_precalcX * (f_xUnprojected[2] * (q[0]*f_xUnrotated[1] - 2*q[1]*f_xUnrotated[0] + q[3]*f_xUnrotated[2]) -
+          f_xUnprojected[0] * (q[2]*f_xUnrotated[1] - q[3]*f_xUnrotated[0] - 2*q[1]*f_xUnrotated[2])) +
+          d_precalcY * (f_xUnprojected[2] * (q[0]*f_xUnrotated[0] + q[2]*f_xUnrotated[2]) -
+          f_xUnprojected[1] * (q[2]*f_xUnrotated[1] - q[3]*f_xUnrotated[0] - 2*q[1]*f_xUnrotated[2]));
 
-          dfPPRotation.z +=
-              f_precalcX * (f_xUnprojected[2] * (q[0]*f_xUnrotated[2] - q[3]*f_xUnrotated[1] - 2*q[2]*f_xUnrotated[0]) -
-              f_xUnprojected[0] * (q[0]*f_xUnrotated[0] + q[1]*f_xUnrotated[1])) +
-              d_precalcY * (f_xUnprojected[2] * (q[3]*f_xUnrotated[0] - 2*q[2]*f_xUnrotated[1] + q[1]*f_xUnrotated[2]) -
-              f_xUnprojected[1] * (q[0]*f_xUnrotated[0] + q[1]*f_xUnrotated[1]));
+      dfPPRotation.z +=
+          f_precalcX * (f_xUnprojected[2] * (q[0]*f_xUnrotated[2] - q[3]*f_xUnrotated[1] - 2*q[2]*f_xUnrotated[0]) -
+          f_xUnprojected[0] * (q[0]*f_xUnrotated[0] + q[1]*f_xUnrotated[1])) +
+          d_precalcY * (f_xUnprojected[2] * (q[3]*f_xUnrotated[0] - 2*q[2]*f_xUnrotated[1] + q[1]*f_xUnrotated[2]) -
+          f_xUnprojected[1] * (q[0]*f_xUnrotated[0] + q[1]*f_xUnrotated[1]));
 
-          dfPPRotation.w +=
-              f_precalcX * (f_xUnprojected[2] * (q[1]*f_xUnrotated[2] - q[2]*f_xUnrotated[1]) -
-              f_xUnprojected[0] * (q[0]*f_xUnrotated[1] - q[1]*f_xUnrotated[0])) +
-              d_precalcY * (f_xUnprojected[2] * (q[2]*f_xUnrotated[0] - q[0]*f_xUnrotated[2]) -
-              f_xUnprojected[1] * (q[0]*f_xUnrotated[1] - q[1]*f_xUnrotated[0]));
+      dfPPRotation.w +=
+          f_precalcX * (f_xUnprojected[2] * (q[1]*f_xUnrotated[2] - q[2]*f_xUnrotated[1]) -
+          f_xUnprojected[0] * (q[0]*f_xUnrotated[1] - q[1]*f_xUnrotated[0])) +
+          d_precalcY * (f_xUnprojected[2] * (q[2]*f_xUnrotated[0] - q[0]*f_xUnrotated[2]) -
+          f_xUnprojected[1] * (q[0]*f_xUnrotated[1] - q[1]*f_xUnrotated[0]));
 
-          dfPPTranslation.x *= f_fPPGeneric;
-          dfPPTranslation.y *= f_fPPGeneric;
-          dfPPTranslation.z *= f_fPPGeneric;
+      dfPPTranslation.x *= f_fPPGeneric;
+      dfPPTranslation.y *= f_fPPGeneric;
+      dfPPTranslation.z *= f_fPPGeneric;
 
-          dfPPRotation.x *= f_fPPGeneric;
-          dfPPRotation.y *= f_fPPGeneric;
-          dfPPRotation.z *= f_fPPGeneric;
-          dfPPRotation.w *= f_fPPGeneric;
+      dfPPRotation.x *= f_fPPGeneric;
+      dfPPRotation.y *= f_fPPGeneric;
+      dfPPRotation.z *= f_fPPGeneric;
+      dfPPRotation.w *= f_fPPGeneric;
 
-          sdataTranslation[offsetInBlock].x = dfPPTranslation.x;
-          sdataTranslation[offsetInBlock].y = dfPPTranslation.y;
-          sdataTranslation[offsetInBlock].z = dfPPTranslation.z;
+      sdataTranslation[offsetInBlock].x = dfPPTranslation.x;
+      sdataTranslation[offsetInBlock].y = dfPPTranslation.y;
+      sdataTranslation[offsetInBlock].z = dfPPTranslation.z;
 
-          sdataRotation[offsetInBlock].x = dfPPRotation.x;
-          sdataRotation[offsetInBlock].y = dfPPRotation.y;
-          sdataRotation[offsetInBlock].z = dfPPRotation.z;
-          sdataRotation[offsetInBlock].w = dfPPRotation.w;
-          }
+      sdataRotation[offsetInBlock].x = dfPPRotation.x;
+      sdataRotation[offsetInBlock].y = dfPPRotation.y;
+      sdataRotation[offsetInBlock].z = dfPPRotation.z;
+      sdataRotation[offsetInBlock].w = dfPPRotation.w;
+      
         }
       }
     }

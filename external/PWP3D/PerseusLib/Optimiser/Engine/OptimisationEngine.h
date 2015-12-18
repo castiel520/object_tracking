@@ -9,6 +9,8 @@
 #include <PerseusLib/Optimiser/EFs/IEnergyFunction.h>
 #include <PerseusLib/Optimiser/EFs/EFStandard.h>
 
+
+
 using namespace PerseusLib::Primitives;
 using namespace PerseusLib::Objects;
 using namespace PerseusLib::Utils;
@@ -54,6 +56,7 @@ public:
   }
 
   void Initialise(int width, int heigh);
+  void Initialise(int width, int height, std::string heavy);
   void Shutdown();
 
   void RegisterViewImage(View3D *view, ImageUChar4* image);
